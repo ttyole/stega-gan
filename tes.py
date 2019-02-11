@@ -61,17 +61,17 @@ class TESModel:
     @define_scope(initializer=tf.initializers.truncated_normal(0, 1), scope="tes")
     def tes_prediction(self):
         x = self.prob_map
-        x = tf.contrib.layers.fully_connected(x, 10)
-        x = tf.contrib.layers.fully_connected(x, 10)
-        x = tf.contrib.layers.fully_connected(x, 10)
-        x = tf.contrib.layers.fully_connected(x, 1)
+        x = tf.contrib.layers.fully_connected(x, 10, activation=None)
+        x = tf.contrib.layers.fully_connected(x, 10, activation=None)
+        x = tf.contrib.layers.fully_connected(x, 10, activation=None)
+        x = tf.contrib.layers.fully_connected(x, 1, activation=None)
         x = tf.subtract(x, 0.5)
 
         y = self.prob_map
-        y = tf.contrib.layers.fully_connected(x, 10)
-        y = tf.contrib.layers.fully_connected(x, 10)
-        y = tf.contrib.layers.fully_connected(x, 10)
-        y = tf.contrib.layers.fully_connected(x, 1)
+        y = tf.contrib.layers.fully_connected(x, 10, activation=None)
+        y = tf.contrib.layers.fully_connected(x, 10, activation=None)
+        y = tf.contrib.layers.fully_connected(x, 10, activation=None)
+        y = tf.contrib.layers.fully_connected(x, 1, activation=None)
         y = tf.subtract(x, 1)
 
         x = tf.add(x, y)
@@ -87,7 +87,8 @@ class TESModel:
     @define_scope
     def error(self):
         diff = tf.abs(tf.subtract(self.label, tf.squeeze(self.tes_prediction)))
-        num_diff = tf.to_float(tf.not_equal(self.label, tf.squeeze(self.tes_prediction)))
+        num_diff = tf.to_float(tf.not_equal(
+            self.label, tf.squeeze(self.tes_prediction)))
         return (tf.reduce_mean(diff), tf.reduce_mean(num_diff))
 
 
@@ -114,7 +115,7 @@ def train_tes():
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-
+        print(tf.trainable_variables())
         prob_maps_test = np.random.randn(
             batch_size * number_of_batches, Height, Width, 2)
         labels_test = np.apply_along_axis(staircase, 3, prob_maps_test)
@@ -129,11 +130,12 @@ def train_tes():
             print('% Diff {:6.2f}% '.format(num_diff * 100))
             for i in range(number_of_batches):
                 sess.run(model.optimize, {prob_map: prob_maps[i*batch_size: (i+1) * batch_size],
-                                        label: labels[i*batch_size: (i+1) * batch_size]})
-        
+                                          label: labels[i*batch_size: (i+1) * batch_size]})
+
         print("Optimization Finished!")
         saver.save(sess, 'model')
         print("Model saved")
+
 
 def restore_tes():
     # tf Graph input
@@ -168,7 +170,8 @@ def restore_tes():
 
 
 def main():
-    restore_tes()
+    train_tes()
+
 
 if __name__ == '__main__':
     main()
