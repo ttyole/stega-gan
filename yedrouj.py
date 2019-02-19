@@ -5,10 +5,15 @@ import tensorflow as tf
 # from tensorflow.examples.tutorials.mnist import prob_map_data
 import numpy as np
 import os
+from get_image import DataLoader
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
 Height, Width = 512, 512
+srm_filters = np.float32(np.load('srm.npy'))
+srm_filters = np.swapaxes(srm_filters, 0, 1)
+srm_filters = np.swapaxes(srm_filters, 1, 2)
+srm_filters = np.expand_dims(srm_filters, axis=2)
 
 
 def doublewrap(function):
@@ -60,77 +65,81 @@ class YedroujModel:
         self.optimize
         self.error
 
-    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminiator")
+    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator")
     def disc_prediction(self):
         x = self.images
-        filter0 = tf.get_variable("filter0", shape=[5, 5, 1, 30])
+        filter0 = tf.Variable(srm_filters, trainable=False)
         x = tf.nn.conv2d(input=x, filter=filter0,
                          padding="SAME", strides=[1, 1, 1, 1])
 
-        filter1 = tf.get_variable("filter1", shape=[5, 5, 1, 30])
+        filter1 = tf.get_variable("filter1", shape=[5, 5, 30, 30])
         x = tf.nn.conv2d(input=x, filter=filter1,
                          padding="SAME", strides=[1, 1, 1, 1])
         x = tf.math.abs(x)
         (mean1, variance1) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
         scale1 = tf.get_variable("scale1", shape=[1])
         x = tf.nn.batch_normalization(
-            x, mean=mean1, variance=variance1, scale=scale1)
-        trunc2 = tf.Variable(3, trainable=False)
+            x, mean=mean1, variance=variance1, scale=scale1, offset=None, variance_epsilon=0.00001)
+        trunc1 = tf.Variable(3, dtype="float32", trainable=False)
         x = tf.clip_by_value(x, clip_value_max=trunc1,
                              clip_value_min=tf.negative(trunc1))
 
-        filter2 = tf.get_variable("filter2", shape=[5, 5, 1, 30])
+        filter2 = tf.get_variable("filter2", shape=[5, 5, 30, 30])
         x = tf.nn.conv2d(x, filter=filter2,
                          padding="SAME", strides=[1, 1, 1, 1])
         (mean2, variance2) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
         scale2 = tf.get_variable("scale2", shape=[1])
         x = tf.nn.batch_normalization(
-            x, mean=mean2, variance=variance2, scale=scale2)
-        trunc2 = tf.Variable(2, trainable=False)
+            x, mean=mean2, variance=variance2, scale=scale2, offset=None, variance_epsilon=0.00001)
+        trunc2 = tf.Variable(2, dtype="float32", trainable=False)
         x = tf.clip_by_value(x, clip_value_max=trunc2,
                              clip_value_min=tf.negative(trunc2))
-        x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[1, 2, 2, 1])
+        x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[
+                           1, 2, 2, 1], padding="SAME")
 
-        filter3 = tf.get_variable("filter3", shape=[3, 3, 1, 32])
+        filter3 = tf.get_variable("filter3", shape=[3, 3, 30, 32])
         x = tf.nn.conv2d(x, filter=filter3,
                          padding="SAME", strides=[1, 1, 1, 1])
         (mean3, variance3) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
         scale3 = tf.get_variable("scale3", shape=[1])
         x = tf.nn.batch_normalization(
-            x, mean=mean3, variance=variance3, scale=scale3)
+            x, mean=mean3, variance=variance3, scale=scale3, offset=None, variance_epsilon=0.00001)
         x = tf.nn.relu(x)
-        x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[1, 2, 2, 1])
+        x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[
+                           1, 2, 2, 1], padding="SAME")
 
-        filter4 = tf.get_variable("filter4", shape=[3, 3, 1, 64])
+        filter4 = tf.get_variable("filter4", shape=[3, 3, 32, 64])
         x = tf.nn.conv2d(x, filter=filter4,
                          padding="SAME", strides=[1, 1, 1, 1])
         (mean4, variance4) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
         scale4 = tf.get_variable("scale4", shape=[1])
         x = tf.nn.batch_normalization(
-            x, mean=mean4, variance=variance4, scale=scale4)
+            x, mean=mean4, variance=variance4, scale=scale4, offset=None, variance_epsilon=0.00001)
         x = tf.nn.relu(x)
-        x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[1, 2, 2, 1])
+        x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[
+                           1, 2, 2, 1], padding="SAME")
 
-        filter5 = tf.get_variable("filter5", shape=[3, 3, 1, 128])
+        filter5 = tf.get_variable("filter5", shape=[3, 3, 64, 128])
         x = tf.nn.conv2d(x, filter=filter5,
                          padding="SAME", strides=[1, 1, 1, 1])
         (mean5, variance5) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
         scale5 = tf.get_variable("scale5", shape=[1])
         x = tf.nn.batch_normalization(
-            x, mean=mean5, variance=variance5, scale=scale5)
+            x, mean=mean5, variance=variance5, scale=scale5, offset=None, variance_epsilon=0.00001)
         x = tf.nn.relu(x)
-        x = tf.reduce_mean(x, [1, 2], name='global_pool', keep_dims=False)
+        x = tf.reduce_mean(x, [1, 2], name='global_pool', keepdims=False)
 
         x = tf.contrib.layers.fully_connected(x, 256)
         x = tf.contrib.layers.fully_connected(x, 1024)
         x = tf.contrib.layers.fully_connected(x, 2)
-
+        x = tf.nn.softmax(x)
         return x
 
     @define_scope
     def optimize(self):
         loss = tf.losses.softmax_cross_entropy(
             self.label, self.disc_prediction)
+        loss = tf.Print(loss, [loss], message="Loss: ")
         optimizer = tf.train.RMSPropOptimizer(
             self.learning_rate, decay=0.9999, momentum=0.95)
         return optimizer.minimize(loss)
@@ -138,7 +147,7 @@ class YedroujModel:
     @define_scope
     def error(self):
         num_diff = tf.to_float(tf.not_equal(
-            self.label, tf.math.softmax(self.disc_prediction)))
+            tf.argmax(self.label, 1), tf.argmax(self.disc_prediction, 1)))
         return tf.reduce_mean(num_diff)
 
     @define_scope
@@ -146,32 +155,33 @@ class YedroujModel:
         self.learning_rate /= self.gamma
 
 
-batch_size = 16
+batch_size = 30
 
 
 def train_yedrouj():
     images = tf.placeholder(tf.float32, [None, Height, Width, 1])
-    label = tf.placeholder(tf.float32, [None, Height, Width])
+    label = tf.placeholder(tf.float32, [None, 2])
     model = YedroujModel(images, label)
+
+    dataLoader = DataLoader("/Users/eliotcrespin/Documents/sis/projet/BOSS/cover-reduced/",
+                            "/Users/eliotcrespin/Documents/sis/projet/BOSS/s-uniward-0.1bpp/", batch_size)
 
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         print(tf.trainable_variables())
-        # images_test
-        # labels_test
-        # iteration_number
+        iteration_number = 2 * dataLoader.images_number * \
+            dataLoader.training_size / dataLoader.batch_size
         for _ in range(10):
-            for i in range(iteration_number//10):
-                # images_batch
-                # labels_batch
-                num_diff = sess.run(
-                    model.error, {prob_map: images_test, label: labels_test})
-                print('Iteration {:6.2f} '.format(_))
-                print('% Diff {:6.2f}% '.format(num_diff * 100))
-                sess.run(model.optimize, {images: images_batch],
-                                          label: labels_batch})
+            images_validation, labels_validation = dataLoader.getNextValidationBatch()
+            num_diff = sess.run(
+                model.error, {images: images_validation, label: labels_validation})
+            print('% Diff {:6.2f}% '.format(num_diff * 100))
+            for _ in range(int(iteration_number/10)):
+                (images_training, labels_training) = dataLoader.getNextTrainingBatch()
+                sess.run(model.optimize, {images: images_training,
+                                          label: labels_training})
             model.decrease_learning_rate()
 
         print("Optimization Finished!")
