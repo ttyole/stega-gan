@@ -7,3 +7,7 @@ sudo nvidia-docker run --runtime=nvidia -it -v /media/data/cover/cover:/tf/app/c
                     -p 8888:80/tcp ttyole/stega-gan:latest
 
 docker run --rm -it -p 8888:80/tcp ttyole/stega-gan:latest
+
+# Monitor ressource usage
+ nvidia-smi --loop=1
+ htop

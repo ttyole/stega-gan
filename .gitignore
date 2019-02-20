@@ -1,6 +1,8 @@
 cover*
 stego*
 
+# Code editor
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
