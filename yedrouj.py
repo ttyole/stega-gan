@@ -9,6 +9,10 @@ from get_image import DataLoader
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
+
+cover_path = os.getenv("COVER_PATH", dir + "/cover/")
+stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
+
 Height, Width = 512, 512
 srm_filters = np.float32(np.load('srm.npy'))
 srm_filters = np.swapaxes(srm_filters, 0, 1)
@@ -155,7 +159,7 @@ class YedroujModel:
         self.learning_rate /= self.gamma
 
 
-batch_size = 30
+batch_size = 10
 
 
 def train_yedrouj():
@@ -163,13 +167,12 @@ def train_yedrouj():
     label = tf.placeholder(tf.float32, [None, 2])
     model = YedroujModel(images, label)
 
-    dataLoader = DataLoader("/Users/eliotcrespin/Documents/sis/projet/BOSS/cover-reduced/",
-                            "/Users/eliotcrespin/Documents/sis/projet/BOSS/s-uniward-0.1bpp/", batch_size)
+    dataLoader = DataLoader(cover_path, stego_path, batch_size)
 
     saver = tf.train.Saver()
 
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
+    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+        print(sess.run(tf.global_variables_initializer()))
         print(tf.trainable_variables())
         iteration_number = 2 * dataLoader.images_number * \
             dataLoader.training_size / dataLoader.batch_size

@@ -1,0 +1,9 @@
+docker build -t ttyole/stega-gan .
+docker push ttyole/stega-gan:latest
+
+sudo nvidia-docker pull ttyole/stega-gan:latest
+sudo nvidia-docker run --runtime=nvidia -it -v /media/data/cover/cover:/tf/app/cover \
+                    -v /media/data/stego/wow-0.4-bpp/0.4bpp:/tf/app/stego \
+                    -p 8888:80/tcp ttyole/stega-gan:latest
+
+docker run --rm -it -p 8888:80/tcp ttyole/stega-gan:latest

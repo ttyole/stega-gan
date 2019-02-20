@@ -10,7 +10,6 @@ dir = os.path.dirname(os.path.realpath(__file__))
 
 Height, Width = 512, 512
 
-
 def doublewrap(function):
     """
     A decorator decorator, allowing to use the decorator to be used without
