@@ -105,7 +105,7 @@ class DataLoader:
                 b"(^P5\s(?:\s*#.*[\r\n])*"
                 b"(\d+)\s(?:\s*#.*[\r\n])*"
                 b"(\d+)\s(?:\s*#.*[\r\n])*"
-                b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
+                b"(\d+)\s)", buffer).groups()
         except AttributeError:
             raise ValueError("Not a raw PGM file: '%s'" % filename)
         return np.frombuffer(buffer,
