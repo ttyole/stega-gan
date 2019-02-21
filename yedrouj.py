@@ -6,6 +6,7 @@ import tensorflow as tf
 import numpy as np
 import os
 from get_image import DataLoader
+import time
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -60,10 +61,10 @@ def define_scope(function, scope=None, *args, **kwargs):
 
 class YedroujModel:
 
-    def __init__(self, images, label):
+    def __init__(self, images, label, learning_rate):
         self.images = images
         self.label = label
-        self.learning_rate = 0.01
+        self.learning_rate = learning_rate
         self.gamma = 0.1
         self.disc_prediction
         self.optimize
@@ -80,7 +81,7 @@ class YedroujModel:
         x = tf.nn.conv2d(input=x, filter=filter1,
                          padding="SAME", strides=[1, 1, 1, 1])
         x = tf.math.abs(x)
-        (mean1, variance1) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
+        (mean1, variance1) = tf.nn.moments(x, axes=[0],  keep_dims=False)
         scale1 = tf.get_variable("scale1", shape=[1])
         x = tf.nn.batch_normalization(
             x, mean=mean1, variance=variance1, scale=scale1, offset=None, variance_epsilon=0.00001)
@@ -91,9 +92,9 @@ class YedroujModel:
         filter2 = tf.get_variable("filter2", shape=[5, 5, 30, 30])
         x = tf.nn.conv2d(x, filter=filter2,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean2, variance2) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
+        (mean2, variance2) = tf.nn.moments(x, axes=[0],  keep_dims=False)
         scale2 = tf.get_variable("scale2", shape=[1])
-        x = tf.nn.batch_normalization(
+        x = tf.nn.batch_nor@malization(
             x, mean=mean2, variance=variance2, scale=scale2, offset=None, variance_epsilon=0.00001)
         trunc2 = tf.Variable(2, dtype="float32", trainable=False)
         x = tf.clip_by_value(x, clip_value_max=trunc2,
@@ -104,7 +105,7 @@ class YedroujModel:
         filter3 = tf.get_variable("filter3", shape=[3, 3, 30, 32])
         x = tf.nn.conv2d(x, filter=filter3,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean3, variance3) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
+        (mean3, variance3) = tf.nn.moments(x, axes=[0],  keep_dims=False)
         scale3 = tf.get_variable("scale3", shape=[1])
         x = tf.nn.batch_normalization(
             x, mean=mean3, variance=variance3, scale=scale3, offset=None, variance_epsilon=0.00001)
@@ -115,7 +116,7 @@ class YedroujModel:
         filter4 = tf.get_variable("filter4", shape=[3, 3, 32, 64])
         x = tf.nn.conv2d(x, filter=filter4,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean4, variance4) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
+        (mean4, variance4) = tf.nn.moments(x, axes=[0],  keep_dims=False)
         scale4 = tf.get_variable("scale4", shape=[1])
         x = tf.nn.batch_normalization(
             x, mean=mean4, variance=variance4, scale=scale4, offset=None, variance_epsilon=0.00001)
@@ -126,7 +127,7 @@ class YedroujModel:
         filter5 = tf.get_variable("filter5", shape=[3, 3, 64, 128])
         x = tf.nn.conv2d(x, filter=filter5,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean5, variance5) = tf.nn.moments(x, axes=[0, 1, 2],  keep_dims=False)
+        (mean5, variance5) = tf.nn.moments(x, axes=[0],  keep_dims=False)
         scale5 = tf.get_variable("scale5", shape=[1])
         x = tf.nn.batch_normalization(
             x, mean=mean5, variance=variance5, scale=scale5, offset=None, variance_epsilon=0.00001)
@@ -143,49 +144,78 @@ class YedroujModel:
     def optimize(self):
         loss = tf.losses.softmax_cross_entropy(
             self.label, self.disc_prediction)
-        loss = tf.Print(loss, [loss], message="Loss: ")
         optimizer = tf.train.RMSPropOptimizer(
             self.learning_rate, decay=0.9999, momentum=0.95)
         return optimizer.minimize(loss)
 
     @define_scope
     def error(self):
+        loss = tf.losses.softmax_cross_entropy(
+            self.label, self.disc_prediction)
         num_diff = tf.to_float(tf.not_equal(
             tf.argmax(self.label, 1), tf.argmax(self.disc_prediction, 1)))
-        return tf.reduce_mean(num_diff)
-
-    @define_scope
-    def decrease_learning_rate(self):
-        self.learning_rate /= self.gamma
+        return (loss, tf.reduce_mean(num_diff))
 
 
-batch_size = 10
+batch_size = 12
+initial_learning_rate = 0.01
+gamma = 0.1
+max_epochs = 900
 
 
 def train_yedrouj():
     images = tf.placeholder(tf.float32, [None, Height, Width, 1])
     label = tf.placeholder(tf.float32, [None, 2])
-    model = YedroujModel(images, label)
+    learning_rate = tf.placeholder(tf.float32, shape=[])
 
-    dataLoader = DataLoader(cover_path, stego_path, batch_size)
+    model = YedroujModel(images, label, learning_rate)
 
     saver = tf.train.Saver()
 
-    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
-        print(sess.run(tf.global_variables_initializer()))
-        print(tf.trainable_variables())
-        iteration_number = 2 * dataLoader.images_number * \
-            dataLoader.training_size / dataLoader.batch_size
-        for _ in range(10):
-            images_validation, labels_validation = dataLoader.getNextValidationBatch()
-            num_diff = sess.run(
-                model.error, {images: images_validation, label: labels_validation})
-            print('% Diff {:6.2f}% '.format(num_diff * 100))
-            for _ in range(int(iteration_number/10)):
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        start = time.time()
+        for epoch in range(max_epochs):
+            dataLoader = DataLoader(cover_path, stego_path, batch_size)
+
+            training_iteration_number = int(
+                2 * dataLoader.images_number * dataLoader.training_size / dataLoader.batch_size)
+            validation_iteration_number = int(
+                2 * dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size)
+            learning_rate_value = initial_learning_rate * \
+                ((1 - gamma) ** (int(epoch * 10/max_epochs)))
+
+            for i in range(training_iteration_number):
                 (images_training, labels_training) = dataLoader.getNextTrainingBatch()
                 sess.run(model.optimize, {images: images_training,
-                                          label: labels_training})
-            model.decrease_learning_rate()
+                                          label: labels_training,
+                                          learning_rate: learning_rate_value})
+                if (i % 40 == 39):
+                    (loss, num_diff) = sess.run(
+                        model.error, {images: images_training, label: labels_training})
+                    print('\n\n{:6.2f}% of current epoch'.format(
+                        100 * i / training_iteration_number))
+                    print('% Diff on training {:6.2f}% '.format(
+                        num_diff * 100))
+                    print('Training loss {:6.9f}'.format(loss))
+                    print('Average time per batch {:6.9f}s'.format(
+                        (time.time() - start) / 40))
+                    print('Average time per epoch {:10.3f}s'.format(
+                        training_iteration_number * (time.time() - start) / 40))
+                    start = time.time()
+            average_loss, average_num_diff = (0, 0)
+            for i in range(validation_iteration_number):
+                images_validation, labels_validation = dataLoader.getNextValidationBatch()
+                (loss, num_diff) = sess.run(
+                    model.error, {images: images_validation, label: labels_validation})
+                average_loss += loss
+                average_num_diff += num_diff
+            average_loss /= validation_iteration_number
+            average_num_diff /= validation_iteration_number
+            print('\n\nEpoch {}'.format(epoch + 1))
+            print('Learning rate: {:6.9f}'.format(learning_rate_value))
+            print('% Diff on validation {:6.2f}% '.format(num_diff * 100))
+            print('Loss on validation {:6.9f}% '.format(average_loss))
 
         print("Optimization Finished!")
         saver.save(sess, 'model')
