@@ -94,7 +94,7 @@ class YedroujModel:
                          padding="SAME", strides=[1, 1, 1, 1])
         (mean2, variance2) = tf.nn.moments(x, axes=[0],  keep_dims=False)
         scale2 = tf.get_variable("scale2", shape=[1])
-        x = tf.nn.batch_nor@malization(
+        x = tf.nn.batch_normalization(
             x, mean=mean2, variance=variance2, scale=scale2, offset=None, variance_epsilon=0.00001)
         trunc2 = tf.Variable(2, dtype="float32", trainable=False)
         x = tf.clip_by_value(x, clip_value_max=trunc2,
@@ -179,9 +179,9 @@ def train_yedrouj():
             dataLoader = DataLoader(cover_path, stego_path, batch_size)
 
             training_iteration_number = int(
-                2 * dataLoader.images_number * dataLoader.training_size / dataLoader.batch_size)
+                dataLoader.images_number * dataLoader.training_size / dataLoader.batch_size) - 1
             validation_iteration_number = int(
-                2 * dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size)
+                dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size) - 1
             learning_rate_value = initial_learning_rate * \
                 ((1 - gamma) ** (int(epoch * 10/max_epochs)))
 
@@ -214,8 +214,8 @@ def train_yedrouj():
             average_num_diff /= validation_iteration_number
             print('\n\nEpoch {}'.format(epoch + 1))
             print('Learning rate: {:6.9f}'.format(learning_rate_value))
-            print('% Diff on validation {:6.2f}% '.format(num_diff * 100))
-            print('Loss on validation {:6.9f}% '.format(average_loss))
+            print('% Diff on validation {:6.2f}% '.format(average_num_diff * 100))
+            print('Loss on validation {:6.9f}'.format(average_loss))
 
         print("Optimization Finished!")
         saver.save(sess, 'model')
