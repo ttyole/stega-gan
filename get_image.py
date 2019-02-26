@@ -15,9 +15,9 @@ class DataLoader:
                  cover_path,
                  stego_path,
                  batch_size,
-                 training_size=0.333,
-                 validation_size=0.333,
-                 testing_size=0.333):
+                 training_size=0.4,
+                 validation_size=0.1,
+                 testing_size=0.5):
         images = [f for f in listdir(cover_path) if (
             isfile(cover_path+f) and isfile(stego_path+f))]
 
