@@ -1,5 +1,6 @@
 cover*
 stego*
+logfile*
 
 # Code editor
 .vscode/

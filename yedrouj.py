@@ -7,7 +7,11 @@ import numpy as np
 import os
 from get_image import DataLoader
 import time
+import logging
 
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, filename="logfile_yedrouj", filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
 dir = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -157,7 +161,7 @@ class YedroujModel:
         return (loss, tf.reduce_mean(num_diff))
 
 
-batch_size = 12
+batch_size = 10
 initial_learning_rate = 0.01
 gamma = 0.1
 max_epochs = 900
@@ -166,42 +170,38 @@ max_epochs = 900
 def train_yedrouj():
     images = tf.placeholder(tf.float32, [None, Height, Width, 1])
     label = tf.placeholder(tf.float32, [None, 2])
-    learning_rate = tf.placeholder(tf.float32, shape=[])
 
-    model = YedroujModel(images, label, learning_rate)
+    model = YedroujModel(images, label, initial_learning_rate)
 
     saver = tf.train.Saver()
-
+    logging.info("Launching training")
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        start = time.time()
         for epoch in range(max_epochs):
+            start = time.time()
             dataLoader = DataLoader(cover_path, stego_path, batch_size)
 
             training_iteration_number = int(
                 dataLoader.images_number * dataLoader.training_size / dataLoader.batch_size) - 1
             validation_iteration_number = int(
                 dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size) - 1
-            learning_rate_value = initial_learning_rate * \
-                ((1 - gamma) ** (int(epoch * 10/max_epochs)))
+            # learning_rate_value = initial_learning_rate * \
+            #     ((1 - gamma) ** (int(epoch * 10/max_epochs)))
 
             for i in range(training_iteration_number):
                 (images_training, labels_training) = dataLoader.getNextTrainingBatch()
                 sess.run(model.optimize, {images: images_training,
-                                          label: labels_training,
-                                          learning_rate: learning_rate_value})
+                                          label: labels_training})
                 if (i % 40 == 39):
                     (loss, num_diff) = sess.run(
                         model.error, {images: images_training, label: labels_training})
-                    print('\n\n{:6.2f}% of current epoch'.format(
+                    logging.info('\n\n{:6.2f}% of current epoch'.format(
                         100 * i / training_iteration_number))
-                    print('% Diff on training {:6.2f}% '.format(
+                    logging.info('% Diff on training {:6.2f}% '.format(
                         num_diff * 100))
-                    print('Training loss {:6.9f}'.format(loss))
-                    print('Average time per batch {:6.9f}s'.format(
-                        (time.time() - start) / 40))
-                    print('Average time per epoch {:10.3f}s'.format(
-                        training_iteration_number * (time.time() - start) / 40))
+                    logging.info('Training loss {:6.9f}'.format(loss))
+                    logging.info('Average time per epoch {:10.3f}min'.format(
+                        training_iteration_number * (time.time() - start)/ 60 / 40))
                     start = time.time()
             average_loss, average_num_diff = (0, 0)
             for i in range(validation_iteration_number):
@@ -212,14 +212,14 @@ def train_yedrouj():
                 average_num_diff += num_diff
             average_loss /= validation_iteration_number
             average_num_diff /= validation_iteration_number
-            print('\n\nEpoch {}'.format(epoch + 1))
-            print('Learning rate: {:6.9f}'.format(learning_rate_value))
-            print('% Diff on validation {:6.2f}% '.format(average_num_diff * 100))
-            print('Loss on validation {:6.9f}'.format(average_loss))
+            logging.info('\n\nEpoch {}'.format(epoch + 1))
+            # logging.info('Learning rate: {:6.9f}'.format(learning_rate_value))
+            logging.info('% Diff on validation {:6.2f}% '.format(average_num_diff * 100))
+            logging.info('Loss on validation {:6.9f}'.format(average_loss))
 
-        print("Optimization Finished!")
+        logging.info("Optimization Finished!")
         saver.save(sess, 'model')
-        print("Model saved")
+        logging.info("Model saved")
 
 
 def main():
