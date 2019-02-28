@@ -8,3 +8,5 @@ RUN apt-get -y install python-tk vim
 COPY . /tf/app/
 
 WORKDIR /tf/app
+
+EXPOSE 6006
