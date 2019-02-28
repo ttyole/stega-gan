@@ -149,14 +149,13 @@ class YedroujModel:
         x = tf.contrib.layers.fully_connected(x, 256)
         x = tf.contrib.layers.fully_connected(x, 1024)
         x = tf.contrib.layers.fully_connected(x, 2)
+        x = tf.nn.softmax(x)
         return x
 
     @define_scope
     def loss(self):
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
-            logits=self.disc_prediction, labels=self.labels))
-        # loss = tf.losses.softmax_cross_entropy(
-        #     self.labels, self.disc_prediction)
+        loss = tf.losses.softmax_cross_entropy(
+            self.labels, self.disc_prediction)
         tf.summary.scalar('loss', loss)
         return loss
 
@@ -174,7 +173,7 @@ class YedroujModel:
         return (self.loss, num_diff)
 
 
-batch_size = 2
+batch_size = 10
 initial_learning_rate = 0.01
 gamma = 0.1
 max_epochs = 900
@@ -206,15 +205,31 @@ def train_yedrouj():
             training_iteration_number = int(
                 dataLoader.images_number * dataLoader.training_size / dataLoader.batch_size) - 1
             validation_iteration_number = int(
-                dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size) - 1
+                dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size)
+
+            number_of_training_for_one_validation = int(training_iteration_number / validation_iteration_number) + 1
             # learning_rate_value = initial_learning_rate * \
             #     ((1 - gamma) ** (int(epoch * 10/max_epochs)))
+            average_loss, average_num_diff = (0, 0)
 
             for i in range(training_iteration_number):
                 (images_training, labels_training) = dataLoader.getNextTrainingBatch()
                 sess.run(model.optimize, {images: images_training,
                                           labels: labels_training})
-                if (i % 40 == 0):
+                if (i % number_of_training_for_one_validation == 0):
+                    step = epoch * training_iteration_number + i
+                    # Do validation
+                    images_validation, labels_validation = dataLoader.getNextValidationBatch()
+                    (loss, num_diff) = sess.run(
+                        model.error, {images: images_validation, labels: labels_validation})
+                    # Update average loss
+                    average_loss += loss
+                    average_num_diff += num_diff
+                    s = sess.run(merged_summary, {
+                        images: images_validation, labels: labels_validation})
+                    validation_writer.add_summary(s, step)
+                    
+                    # Compute error on training
                     (loss, num_diff) = sess.run(
                         model.error, {images: images_training, labels: labels_training})
                     logging.info('\n\n{:6.2f}% of current epoch'.format(
@@ -224,23 +239,12 @@ def train_yedrouj():
                     logging.info('Training loss {:6.9f}'.format(loss))
                     if (i != 0):
                         logging.info('Average time per epoch {:10.3f}min'.format(
-                            training_iteration_number * (time.time() - start) / 60 / 40))
+                            training_iteration_number * (time.time() - start) / 60 / number_of_training_for_one_validation))
                         start = time.time()
 
                     s = sess.run(merged_summary, {
                                  images: images_training, labels: labels_training})
-                    train_writer.add_summary(s, i)
-            average_loss, average_num_diff = (0, 0)
-            for i in range(validation_iteration_number):
-                images_validation, labels_validation = dataLoader.getNextValidationBatch()
-                (loss, num_diff) = sess.run(
-                    model.error, {images: images_validation, labels: labels_validation})
-                average_loss += loss
-                average_num_diff += num_diff
-                if (i % 10 == 0):
-                    s = sess.run(merged_summary, {
-                        images: images_validation, labels: labels_validation})
-                    validation_writer.add_summary(s, i)
+                    train_writer.add_summary(s, step)
             average_loss /= validation_iteration_number
             average_num_diff /= validation_iteration_number
             logging.info('\n\nEpoch {}'.format(epoch + 1))

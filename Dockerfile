@@ -9,4 +9,4 @@ COPY . /tf/app/
 
 WORKDIR /tf/app
 
-EXPOSE 6006
+EXPOSE 80
