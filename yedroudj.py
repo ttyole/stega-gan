@@ -16,8 +16,8 @@ if __name__ == "__main__":
 dir = os.path.dirname(os.path.realpath(__file__))
 
 
-cover_path = os.getenv("COVER_PATH", dir + "/cover/")
-stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
+cover_path = os.getenv("COVER_PATH", dir + "/cover-10/")
+stego_path = os.getenv("STEGO_PATH", dir + "/stego-10/")
 
 Height, Width = 512, 512
 srm_filters = np.float32(np.load('srm.npy'))
@@ -173,7 +173,7 @@ class YedroujModel:
         return (self.loss, num_diff)
 
 
-batch_size = 10
+batch_size = 1
 initial_learning_rate = 0.01
 gamma = 0.1
 max_epochs = 900
@@ -183,7 +183,6 @@ def train_yedrouj():
     images = tf.placeholder(
         tf.float32, [None, Height, Width, 1], name="images")
     labels = tf.placeholder(tf.float32, [None, 2], name="labels")
-    tf.summary.image("images", images, 3)
     model = YedroujModel(images, labels, initial_learning_rate)
 
     saver = tf.train.Saver()
@@ -198,16 +197,15 @@ def train_yedrouj():
             summaries_dir + "/validation")
         train_writer.add_graph(sess.graph)
         validation_writer.add_graph(sess.graph)
+        dataLoader = DataLoader(cover_path, stego_path, batch_size)
         for epoch in range(max_epochs):
             start = time.time()
-            dataLoader = DataLoader(cover_path, stego_path, batch_size)
 
             training_iteration_number = int(
                 dataLoader.images_number * dataLoader.training_size / dataLoader.batch_size) - 1
             validation_iteration_number = int(
                 dataLoader.images_number * dataLoader.validation_size / dataLoader.batch_size)
 
-            number_of_training_for_one_validation = int(training_iteration_number / validation_iteration_number) + 1
             # learning_rate_value = initial_learning_rate * \
             #     ((1 - gamma) ** (int(epoch * 10/max_epochs)))
             average_loss, average_num_diff = (0, 0)
@@ -216,8 +214,7 @@ def train_yedrouj():
                 (images_training, labels_training) = dataLoader.getNextTrainingBatch()
                 sess.run(model.optimize, {images: images_training,
                                           labels: labels_training})
-                if (i % number_of_training_for_one_validation == 0):
-                    step = epoch * training_iteration_number + i
+                if (i % 2 == 0):
                     # Do validation
                     images_validation, labels_validation = dataLoader.getNextValidationBatch()
                     (loss, num_diff) = sess.run(
@@ -227,7 +224,7 @@ def train_yedrouj():
                     average_num_diff += num_diff
                     s = sess.run(merged_summary, {
                         images: images_validation, labels: labels_validation})
-                    validation_writer.add_summary(s, step)
+                    validation_writer.add_summary(s, epoch)
                     
                     # Compute error on training
                     (loss, num_diff) = sess.run(
@@ -239,12 +236,12 @@ def train_yedrouj():
                     logging.info('Training loss {:6.9f}'.format(loss))
                     if (i != 0):
                         logging.info('Average time per epoch {:10.3f}min'.format(
-                            training_iteration_number * (time.time() - start) / 60 / number_of_training_for_one_validation))
+                            training_iteration_number * (time.time() - start) / 60 / 100))
                         start = time.time()
 
                     s = sess.run(merged_summary, {
                                  images: images_training, labels: labels_training})
-                    train_writer.add_summary(s, step)
+                    train_writer.add_summary(s, epoch)
             average_loss /= validation_iteration_number
             average_num_diff /= validation_iteration_number
             logging.info('\n\nEpoch {}'.format(epoch + 1))

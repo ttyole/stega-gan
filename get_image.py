@@ -48,6 +48,10 @@ class DataLoader:
             (cover_path+images[i], stego_path+images[i]) for i in validation_indices]
         self.testing_files = [
             (cover_path+images[i], stego_path+images[i]) for i in testing_indices]
+        
+        self.training_files_left = self.training_files
+        self.validation_files_left = self.validation_files
+        self.testing_files_left = self.testing_files
 
         # self.training_files = random.sample(
         #     self.training_files, training_size*self.images_number)
@@ -61,38 +65,42 @@ class DataLoader:
             The function returns (batch, label) with
             batch: a tensor of size (batch_size*2, image_height, image_width)
             label: a list of image path and label of the form ([img1, img2, ...], [isStego1, isStego2, ...])"""
-        if(self.batch_size <= len(self.training_files)):
-            batch_files = self.training_files[:self.batch_size]
-            self.training_files = self.training_files[self.batch_size:]
+        if(self.batch_size > len(self.training_files_left)):
+            self.training_files_left = self.training_files
+            random.shuffle(self.training_files_left)
+        batch_files = self.training_files_left[:self.batch_size]
+        self.training_files_left = self.training_files_left[self.batch_size:]
 
-            batch_list = []
-            label = []  # [0, 1, 0, 1, ...]
-            for (cover, stego) in batch_files:
-                cov = np.expand_dims(self.read_pgm(cover), axis=2)
-                steg = np.expand_dims(self.read_pgm(stego), axis=2)
-                batch_list += [cov, steg]
-                label += [[0, 1], [1, 0]]
+        batch_list = []
+        label = []  # [0, 1, 0, 1, ...]
+        for (cover, stego) in batch_files:
+            cov = np.expand_dims(self.read_pgm(cover), axis=2)
+            steg = np.expand_dims(self.read_pgm(stego), axis=2)
+            batch_list += [cov, steg]
+            label += [[0, 1], [1, 0]]
 
-            return batch_list, label
+        return batch_list, label
 
     def getNextValidationBatch(self):
         """Batch will contain batch_size pairs of cover,stego images
             The function returns (batch, label) with
             batch: a tensor of size (batch_size*2, image_height, image_width)
             label: a list of image path and label of the form ([img1, img2, ...], [isStego1, isStego2, ...])"""
-        if(self.batch_size <= len(self.validation_files)):
-            batch_files = self.validation_files[:self.batch_size]
-            self.validation_files = self.validation_files[self.batch_size:]
+        if(self.batch_size > len(self.validation_files_left)):
+            self.validation_files_left = self.validation_files
+            random.shuffle(self.validation_files_left)
+        batch_files = self.validation_files_left[:self.batch_size]
+        self.validation_files_left = self.validation_files_left[self.batch_size:]
 
-            batch_list = []
-            label = []  # [0, 1, 0, 1, ...]
-            for (cover, stego) in batch_files:
-                cov = np.expand_dims(self.read_pgm(cover), axis=2)
-                steg = np.expand_dims(self.read_pgm(stego), axis=2)
-                batch_list += [cov, steg]
-                label += [[0, 1], [1, 0]]
+        batch_list = []
+        label = []  # [0, 1, 0, 1, ...]
+        for (cover, stego) in batch_files:
+            cov = np.expand_dims(self.read_pgm(cover), axis=2)
+            steg = np.expand_dims(self.read_pgm(stego), axis=2)
+            batch_list += [cov, steg]
+            label += [[0, 1], [1, 0]]
 
-            return batch_list, label
+        return batch_list, label
 
     def read_pgm(self, filename, byteorder='>'):
         """Return image data from a raw PGM file as numpy array.
