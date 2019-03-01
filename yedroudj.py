@@ -16,8 +16,8 @@ if __name__ == "__main__":
 dir = os.path.dirname(os.path.realpath(__file__))
 
 
-cover_path = os.getenv("COVER_PATH", dir + "/cover-10/")
-stego_path = os.getenv("STEGO_PATH", dir + "/stego-10/")
+cover_path = os.getenv("COVER_PATH", dir + "/cover/")
+stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
 
 Height, Width = 512, 512
 srm_filters = np.float32(np.load('srm.npy'))
@@ -173,7 +173,7 @@ class YedroujModel:
         return (self.loss, num_diff)
 
 
-batch_size = 1
+batch_size = 10
 initial_learning_rate = 0.01
 gamma = 0.1
 max_epochs = 900
@@ -214,7 +214,7 @@ def train_yedrouj():
                 (images_training, labels_training) = dataLoader.getNextTrainingBatch()
                 sess.run(model.optimize, {images: images_training,
                                           labels: labels_training})
-                if (i % 2 == 0):
+                if (i % 100 == 0):
                     # Do validation
                     images_validation, labels_validation = dataLoader.getNextValidationBatch()
                     (loss, num_diff) = sess.run(
