@@ -110,10 +110,10 @@ class DataLoader:
             buffer = f.read()
         try:
             header, width, height, maxval = re.search(
-                b"(^P5\s(?:\s*#.*[\r\n])*"
-                b"(\d+)\s(?:\s*#.*[\r\n])*"
-                b"(\d+)\s(?:\s*#.*[\r\n])*"
-                b"(\d+)\s)", buffer).groups()
+                b"(^P5\\s(?:\\s*#.*[\r\n])*"
+                b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
+                b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
+                b"(\\d+)\\s)", buffer).groups()
         except AttributeError:
             raise ValueError("Not a raw PGM file: '%s'" % filename)
         return np.frombuffer(buffer,

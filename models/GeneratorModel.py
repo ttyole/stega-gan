@@ -1,11 +1,7 @@
-# Working example for my blog post at:
-# https://danijar.github.io/structuring-your-tensorflow-models
-import functools
+from utility.wrappers import define_scope
 import tensorflow as tf
-# from tensorflow.examples.tutorials.mnist import prob_map_data
 import numpy as np
 import os
-from get_image import DataLoader
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -19,58 +15,21 @@ srm_filters = np.swapaxes(srm_filters, 0, 1)
 srm_filters = np.swapaxes(srm_filters, 1, 2)
 srm_filters = np.expand_dims(srm_filters, axis=2)
 
+class GeneratorModel:
 
-def doublewrap(function):
-    """
-    A decorator decorator, allowing to use the decorator to be used without
-    parentheses if no arguments are provided. All arguments must be optional.
-    """
-    @functools.wraps(function)
-    def decorator(*args, **kwargs):
-        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
-            return function(args[0])
-        else:
-            return lambda wrapee: function(wrapee, *args, **kwargs)
-    return decorator
-
-
-@doublewrap
-def define_scope(function, scope=None, *args, **kwargs):
-    """
-    A decorator for functions that define TensorFlow operations. The wrapped
-    function will only be executed once. Subsequent calls to it will directly
-    return the result so that operations are added to the graph only once.
-    The operations added by the function live within a tf.variable_scope(). If
-    this decorator is used with arguments, they will be forwarded to the
-    variable scope. The scope name defaults to the name of the wrapped
-    function.
-    """
-    attribute = '_cache_' + function.__name__
-    name = scope or function.__name__
-
-    @property
-    @functools.wraps(function)
-    def decorator(self):
-        if not hasattr(self, attribute):
-            with tf.variable_scope(name, *args, **kwargs):
-                setattr(self, attribute, function(self))
-        return getattr(self, attribute)
-    return decorator
-
-
-class YedroujModel:
-
-    def __init__(self, images, label):
+    def __init__(self, images, intermediate_probmaps, discriminator_loss):
         self.images = images
-        self.label = label
+
+        self.intermediate_probmaps = intermediate_probmaps
+        self.discriminator_loss =  discriminator_loss
+
         self.learning_rate = 0.01
         self.gamma = 0.1
-        self.disc_prediction
+        self.generator_prediction
         self.optimize
-        self.error
 
-    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator")
-    def disc_prediction(self):
+    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="generator") # pylint: disable=no-value-for-parameter
+    def generator_prediction(self):
         x = self.images
 
         ### Preprocessing High-Pass Filters ###
@@ -312,71 +271,18 @@ class YedroujModel:
         x = tf.nn.sigmoid(x)
         x = tf.subtract(x,0.5)
         x = tf.nn.relu(x)
-
-        ############### TES ####################
-        # x = tes(x)
-
-        ########### Output Stego Image #########
-        stego = tf.add(self.images,x)
-
-        return stego
-
+        return x
+    
+    @define_scope
+    def capacity(self):
+        return
+    
+    @define_scope
+    def loss(self):
+        return
+    
     @define_scope
     def optimize(self):
-        loss = tf.losses.softmax_cross_entropy(
-            self.label, self.disc_prediction)
-        loss = tf.Print(loss, [loss], message="Loss: ")
         optimizer = tf.train.RMSPropOptimizer(
             self.learning_rate, decay=0.9999, momentum=0.95)
-        return optimizer.minimize(loss)
-
-    @define_scope
-    def error(self):
-        num_diff = tf.to_float(tf.not_equal(
-            tf.argmax(self.label, 1), tf.argmax(self.disc_prediction, 1)))
-        return tf.reduce_mean(num_diff)
-
-    @define_scope
-    def decrease_learning_rate(self):
-        self.learning_rate /= self.gamma
-
-
-batch_size = 10
-
-
-def train_yedrouj():
-    images = tf.placeholder(tf.float32, [None, Height, Width, 1])
-    label = tf.placeholder(tf.float32, [None, 2])
-    model = YedroujModel(images, label)
-
-    dataLoader = DataLoader(cover_path, stego_path, batch_size)
-
-    saver = tf.train.Saver()
-
-    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
-        print(sess.run(tf.global_variables_initializer()))
-        print(tf.trainable_variables())
-        iteration_number = 2 * dataLoader.images_number * \
-            dataLoader.training_size / dataLoader.batch_size
-        for _ in range(10):
-            images_validation, labels_validation = dataLoader.getNextValidationBatch()
-            num_diff = sess.run(
-                model.error, {images: images_validation, label: labels_validation})
-            print('% Diff {:6.2f}% '.format(num_diff * 100))
-            for _ in range(int(iteration_number/10)):
-                (images_training, labels_training) = dataLoader.getNextTrainingBatch()
-                sess.run(model.optimize, {images: images_training,
-                                          label: labels_training})
-            model.decrease_learning_rate()
-
-        print("Optimization Finished!")
-        saver.save(sess, 'model')
-        print("Model saved")
-
-
-def main():
-    train_yedrouj()
-
-
-if __name__ == '__main__':
-    main()
+        return optimizer.minimize(self.loss)
