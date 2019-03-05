@@ -10,7 +10,7 @@ cover_path = os.getenv("COVER_PATH", dir + "/cover/")
 stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
 
 Height, Width = 512, 512
-embeding_rate = 0.4
+embedding_rate = 0.4
 srm_filters = np.float32(np.load('srm.npy'))
 srm_filters = np.swapaxes(srm_filters, 0, 1)
 srm_filters = np.swapaxes(srm_filters, 1, 2)
@@ -303,15 +303,15 @@ class GeneratorModel:
     @define_scope
     def capacity(self, scope="gen_capacity"):
         f = lambda x: x - x*np.log(x)/np.log(2) - (1-x)*np.log(1-x)/np.log(2)
-        gen_capacity = tf.reduce_sum(tf.map_fn(f, self.generator_prediction, dtype=tf.float32),name="capacity")
+        gen_capacity = tf.reduce_sum(tf.map_fn(f, self.intermediate_probmaps, dtype=tf.float32),name="capacity")
         return gen_capacity
     
     @define_scope
     def loss(self, scope="gen_loss"):
         alpha = 10.0**8
         beta = 0.1
-        loss_gen_1 = - self.descriminateur
-        loss_gen_2 = (self.capacity - Height*Width*embeding_rate)**2
+        loss_gen_1 = - self.discriminator_loss
+        loss_gen_2 = (self.capacity - Height*Width*embedding_rate)**2
         loss_gen = alpha * loss_gen_1 + beta*loss_gen_2
         return loss_gen
     
