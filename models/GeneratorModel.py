@@ -19,8 +19,8 @@ srm_filters = np.expand_dims(srm_filters, axis=2)
 
 class GeneratorModel:
 
-    def __init__(self, images, intermediate_probmaps, discriminator_loss):
-        self.images = images
+    def __init__(self, covers, intermediate_probmaps, discriminator_loss):
+        self.images = covers
 
         self.intermediate_probmaps = intermediate_probmaps
         self.discriminator_loss = discriminator_loss
@@ -297,7 +297,7 @@ class GeneratorModel:
             x, mean=mean, variance=var, scale=None, offset=None, variance_epsilon=0.00001)
         x = tf.nn.sigmoid(x)
         x = tf.subtract(x, 0.5)
-        x = tf.nn.relu(x)
+        x = tf.nn.relu(x, name='intermediate_probmaps')
         return x
 
     @define_scope
