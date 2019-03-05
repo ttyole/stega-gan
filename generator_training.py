@@ -1,17 +1,20 @@
 import tensorflow as tf
 import numpy as np
-import os
-from models.YedroudjModel import YedroudjModel
-from models.utility.get_image import DataLoader
+
+from models import YedroudjModel
+from models import TESModel
+from models import GeneratorModel
+from models.utility.get_image import CoverLoader
+
 import time
 from datetime import datetime
 
+import os
 dir = os.path.dirname(os.path.realpath(__file__))
-
-Height, Width = 512, 512
-
 cover_path = os.getenv("COVER_PATH", dir + "/cover-10/")
 stego_path = os.getenv("STEGO_PATH", dir + "/stego-10/")
+
+Height, Width = 512, 512
 
 batch_size = 2
 initial_learning_rate = 0.01
@@ -23,7 +26,8 @@ def train_yedrouj():
     images = tf.placeholder(
         tf.float32, [None, Height, Width, 1], name="images")
     labels = tf.placeholder(tf.float32, [None, 2], name="labels")
-    model = YedroudjModel(images, labels, initial_learning_rate)
+    Yedroudj = YedroudjModel(images, labels, initial_learning_rate)
+    TES = TESModel
 
     print("Launching training")
     with tf.Session() as sess:

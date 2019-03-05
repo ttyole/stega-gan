@@ -302,19 +302,21 @@ class GeneratorModel:
 
     @define_scope
     def capacity(self, scope="gen_capacity"):
-        f = lambda x: x - x*np.log(x)/np.log(2) - (1-x)*np.log(1-x)/np.log(2)
-        gen_capacity = tf.reduce_sum(tf.map_fn(f, self.intermediate_probmaps, dtype=tf.float32),name="capacity")
+        def f(x): return x - x*np.log(x) / \
+            np.log(2) - (1-x)*np.log(1-x)/np.log(2)
+        gen_capacity = tf.reduce_sum(
+            tf.map_fn(f, self.intermediate_probmaps, dtype=tf.float32), name="capacity")
         return gen_capacity
-    
+
     @define_scope
     def loss(self, scope="gen_loss"):
         alpha = 10.0**8
         beta = 0.1
         loss_gen_1 = - self.discriminator_loss
         loss_gen_2 = (self.capacity - Height*Width*embedding_rate)**2
-        loss_gen = alpha * loss_gen_1 + beta*loss_gen_2
+        loss_gen = alpha*loss_gen_1 + beta*loss_gen_2
         return loss_gen
-    
+
     @define_scope
     def optimize(self, scope="gen_optimize"):
         optimizer = tf.train.RMSPropOptimizer(
@@ -322,5 +324,3 @@ class GeneratorModel:
         gen_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
         return optimizer.minimize(self.loss, var_list=gen_vars)
-
-        
