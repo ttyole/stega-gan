@@ -25,7 +25,7 @@ class GeneratorModel:
         self.intermediate_probmaps = intermediate_probmaps
         self.discriminator_loss = discriminator_loss
 
-        self.learning_rate = 0.01
+        self.learning_rate = 1e-10
         self.gamma = 0.1
         self.generator_prediction
         self.optimize

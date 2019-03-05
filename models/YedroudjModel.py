@@ -27,6 +27,7 @@ class YedroudjModel:
         self.learning_rate = learning_rate
         self.gamma = 0.1
         self.disc_prediction
+        self.loss
         self.optimize
         self.error
 
