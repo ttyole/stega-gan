@@ -4,7 +4,6 @@ import re
 import random
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
 random.seed()
 
@@ -48,7 +47,7 @@ class DataLoader:
             (cover_path+images[i], stego_path+images[i]) for i in validation_indices]
         self.testing_files = [
             (cover_path+images[i], stego_path+images[i]) for i in testing_indices]
-        
+
         self.training_files_left = self.training_files
         self.validation_files_left = self.validation_files
         self.testing_files_left = self.testing_files
@@ -74,8 +73,8 @@ class DataLoader:
         batch_list = []
         label = []  # [0, 1, 0, 1, ...]
         for (cover, stego) in batch_files:
-            cov = np.expand_dims(self.read_pgm(cover), axis=2)
-            steg = np.expand_dims(self.read_pgm(stego), axis=2)
+            cov = np.expand_dims(read_pgm(cover), axis=2)
+            steg = np.expand_dims(read_pgm(stego), axis=2)
             batch_list += [cov, steg]
             label += [[0, 1], [1, 0]]
 
@@ -95,30 +94,63 @@ class DataLoader:
         batch_list = []
         label = []  # [0, 1, 0, 1, ...]
         for (cover, stego) in batch_files:
-            cov = np.expand_dims(self.read_pgm(cover), axis=2)
-            steg = np.expand_dims(self.read_pgm(stego), axis=2)
+            cov = np.expand_dims(read_pgm(cover), axis=2)
+            steg = np.expand_dims(read_pgm(stego), axis=2)
             batch_list += [cov, steg]
             label += [[0, 1], [1, 0]]
 
         return batch_list, label
 
-    def read_pgm(self, filename, byteorder='>'):
-        """Return image data from a raw PGM file as numpy array.
-        Format specification: http://netpbm.sourceforge.net/doc/pgm.html
-        """
-        with open(filename, 'rb') as f:
-            buffer = f.read()
-        try:
-            header, width, height, maxval = re.search(
-                b"(^P5\\s(?:\\s*#.*[\r\n])*"
-                b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
-                b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
-                b"(\\d+)\\s)", buffer).groups()
-        except AttributeError:
-            raise ValueError("Not a raw PGM file: '%s'" % filename)
-        return np.frombuffer(buffer,
-                             dtype='u1' if int(
-                                 maxval) < 256 else byteorder+'u2',
-                             count=int(width)*int(height),
-                             offset=len(header)
-                             ).reshape((int(height), int(width)))
+
+def read_pgm(filename, byteorder='>'):
+    """Return image data from a raw PGM file as numpy array.
+    Format specification: http://netpbm.sourceforge.net/doc/pgm.html
+    """
+    with open(filename, 'rb') as f:
+        buffer = f.read()
+    try:
+        header, width, height, maxval = re.search(
+            b"(^P5\\s(?:\\s*#.*[\r\n])*"
+            b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
+            b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
+            b"(\\d+)\\s)", buffer).groups()
+    except AttributeError:
+        raise ValueError("Not a raw PGM file: '%s'" % filename)
+    return np.frombuffer(buffer,
+                         dtype='u1' if int(
+                             maxval) < 256 else byteorder+'u2',
+                         count=int(width)*int(height),
+                         offset=len(header)
+                         ).reshape((int(height), int(width)))
+
+
+class CoverLoader:
+
+    def __init__(self,
+                 cover_path,
+                 batch_size):
+
+        self.batch_size = batch_size
+
+        images = [cover_path+f for f in listdir(cover_path) if
+                  isfile(cover_path+f)]
+        self.cover_files = images        
+        self.cover_files_left = self.cover_files
+
+        random.shuffle(self.cover_files_left)
+
+    def getNextCoverBatch(self):
+        """Batch will contain batch_size cover images
+            The function returns a list containing batch_size tensors of size
+            (image_height, image_width, 1)"""
+        
+        if(self.batch_size > len(self.cover_files_left)):
+            self.cover_files_left = self.cover_files
+            random.shuffle(self.cover_files_left)
+
+        batch_files = self.cover_files_left[:self.batch_size]
+        self.cover_files_left = self.cover_files_left[self.batch_size:]
+
+        batch = [np.expand_dims(read_pgm(cover), axis=2) for cover in batch_files]
+
+        return batch
