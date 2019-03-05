@@ -17,24 +17,24 @@ class TESModel:
     @define_scope(initializer=tf.initializers.truncated_normal(0, 1), scope="tes")  # pylint: disable=no-value-for-parameter
     def tes_prediction(self):
         x = self.prob_map
-        x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid, trainable=True)
-        x = tf.subtract(x, 0.5)
-        x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid, trainable=True)
-        x = tf.subtract(x, 0.5)
-        x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid, trainable=True)
-        x = tf.layers.dense(x, 1, activation=tf.nn.sigmoid, trainable=True)
+        x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid, trainable=True, name="l_dense_1")
+        x = tf.subtract(x, 0.5, name="l_sub_1")
+        x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid, trainable=True, name="l_dense_2")
+        x = tf.subtract(x, 0.5, name="l_sub_2")
+        x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid, trainable=True, name="l_dense_3")
+        x = tf.layers.dense(x, 1, activation=tf.nn.sigmoid, trainable=True, name="l_dense_4")
         tf.summary.histogram("left", x)
         y = self.prob_map
-        y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid, trainable=True)
-        y = tf.subtract(y, 0.5)
-        y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid, trainable=True)
-        y = tf.subtract(y, 0.5)
-        y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid, trainable=True)
-        y = tf.layers.dense(y, 1, activation=tf.nn.sigmoid, trainable=True)
-        y = tf.subtract(y, 1)
+        y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid, trainable=True, name="r_dense_1")
+        y = tf.subtract(y, 0.5, name="r_sub_1")
+        y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid, trainable=True, name="r_dense_2")
+        y = tf.subtract(y, 0.5, name="r_sub_2")
+        y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid, trainable=True, name="r_dense_3")
+        y = tf.layers.dense(y, 1, activation=tf.nn.sigmoid, trainable=True, name="r_dense_4")
+        y = tf.subtract(y, 1, name="r_sub_3")
         tf.summary.histogram("right", y)
 
-        x = tf.add(x, y)
+        x = tf.add(x, y, name="lr_add")
         tf.summary.histogram("sum", x)
         return x
 

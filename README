@@ -13,5 +13,5 @@ tail -f .yedroudj1.log
 docker run --rm -it -p 80:80/tcp ttyole/stega-gan:latest
 
 # Monitor ressource usage
- nvidia-smi --loop=1
+ watch nvidia-smi
  htop
