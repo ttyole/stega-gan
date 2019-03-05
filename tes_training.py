@@ -11,7 +11,6 @@ batch_size = 1000
 iteration_number = 1000000
 log_every = 1000
 
-
 def train_tes():
     prob_map = tf.placeholder(tf.float32, [None,  2])
     label = tf.placeholder(tf.float32, [None])
@@ -23,7 +22,7 @@ def train_tes():
         sess.run(tf.global_variables_initializer())
 
         merged_summary = tf.summary.merge_all()
-        summaries_dir = "/tmp/TES/v1/"
+        summaries_dir = "/tmp/TES/v2/"
         train_writer = tf.summary.FileWriter(
             summaries_dir + "train")
         validation_writer = tf.summary.FileWriter(
@@ -56,7 +55,6 @@ def train_tes():
                 s = sess.run(merged_summary, {prob_map: prob_maps_test,
                                                   label: labels_test})
                 validation_writer.add_summary(s, i)
-
         print("Optimization Finished!")
         saver.save(sess, './saves/tes/tes')
         print("Model saved")
