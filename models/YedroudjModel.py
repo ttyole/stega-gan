@@ -107,20 +107,20 @@ class YedroudjModel:
         return x
 
     @define_scope
-    def loss(self):
+    def loss(self, scope="disc_loss"):
         loss = tf.losses.softmax_cross_entropy(
             self.labels, self.disc_prediction)
         tf.summary.scalar('loss', loss)
         return loss
 
     @define_scope
-    def optimize(self):
+    def optimize(self, scope="disc_optimize"):
         optimizer = tf.train.RMSPropOptimizer(
             self.learning_rate, decay=0.9999, momentum=0.95)
         return optimizer.minimize(self.loss)
 
     @define_scope
-    def error(self):
+    def error(self, scope="disc_error"):
         num_diff = tf.reduce_mean(tf.cast((tf.not_equal(
             tf.argmax(self.labels, 1), tf.argmax(self.disc_prediction, 1))), tf.float32), name="num_diff")
         tf.summary.scalar('num_diff', num_diff)
