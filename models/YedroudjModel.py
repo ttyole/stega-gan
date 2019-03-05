@@ -120,7 +120,8 @@ class YedroudjModel:
             self.learning_rate, decay=0.9999, momentum=0.95)
         disc_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
-        return optimizer.minimize(self.loss, var_list=disc_vars)
+        loss = self.loss
+        return (loss, optimizer.minimize(loss, var_list=disc_vars))
 
     @define_scope
     def error(self, scope="disc_error"):

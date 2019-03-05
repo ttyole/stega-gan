@@ -7,7 +7,7 @@ import os
 
 class TESModel:
 
-    def __init__(self, prob_map, label, images=None):
+    def __init__(self, prob_map, label=None, images=None):
         self.prob_map = prob_map
         self.label = label
         self.images = images

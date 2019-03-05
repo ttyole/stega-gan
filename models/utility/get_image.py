@@ -131,11 +131,10 @@ class CoverLoader:
                  batch_size):
 
         self.batch_size = batch_size
-
-        images = [cover_path+f for f in listdir(cover_path) if
-                  isfile(cover_path+f)]
-        self.cover_files = images        
+        self.cover_files = [cover_path+f for f in listdir(cover_path) if
+                  isfile(cover_path+f)]       
         self.cover_files_left = self.cover_files
+        self.cover_files_size = len(self.cover_files)
 
         random.shuffle(self.cover_files_left)
 
