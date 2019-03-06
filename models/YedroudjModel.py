@@ -112,13 +112,13 @@ class YedroudjModel:
     def loss(self, scope="disc_loss"):
         loss = tf.losses.softmax_cross_entropy(
             self.labels, self.disc_prediction)
-        tf.summary.scalar('loss', loss)
+        tf.summary.scalar('disc_loss', loss)
         return loss
 
     @define_scope
     def optimize(self, scope="disc_optimize"):
         optimizer = tf.train.RMSPropOptimizer(
-            self.learning_rate, decay=0.9999, momentum=0.95)
+            self.learning_rate, decay=0.9999, momentum=0.95, name="gen_optimize")
         disc_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
         loss = self.loss
@@ -128,5 +128,5 @@ class YedroudjModel:
     def error(self, scope="disc_error"):
         num_diff = tf.reduce_mean(tf.cast((tf.not_equal(
             tf.argmax(self.labels, 1), tf.argmax(self.disc_prediction, 1))), tf.float32), name="num_diff")
-        tf.summary.scalar('num_diff', num_diff)
+        tf.summary.scalar('disc_num_diff', num_diff)
         return (self.loss, num_diff)

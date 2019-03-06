@@ -22,24 +22,23 @@ class GeneratorModel:
 
 
         self.learning_rate = 1e-10
-        self.gamma = 0.1
         self.generator_prediction
 
-        tes_rand_maps = tf.random.uniform(tf.shape(self.generator_prediction))
-        tes_prob_maps = tf.concat([self.generator_prediction, tes_rand_maps], 3)
+        tes_rand_maps = tf.random.uniform(tf.shape(self.generator_prediction), name="noise_for_TES")
+        tes_prob_maps = tf.concat([self.generator_prediction, tes_rand_maps], 3, name="prob_maps_for_TES")
 
-        self.TESModel = TESModel(tes_prob_maps, images = covers)
-        stegos = self.TESModel.generate_image
+        self.tesModel = TESModel(tes_prob_maps, images = covers)
+        stegos = self.tesModel.generate_image
 
-        covers_labels = tf.constant([0, 1], dtype="float32")
-        covers_labels = tf.broadcast_to(covers_labels, [batch_size, 2])
-        stegos_labels = tf.constant([1, 0], dtype="float32")
-        stegos_labels = tf.broadcast_to(stegos_labels, [batch_size, 2])
+        covers_label = tf.constant([0, 1], dtype="float32", name="covers_label")
+        covers_labels = tf.broadcast_to(covers_label, [batch_size, 2], name="covers_labels")
+        stegos_label = tf.constant([1, 0], dtype="float32", name="stegos_label")
+        stegos_labels = tf.broadcast_to(stegos_label, [batch_size, 2], name="stegos_labels")
 
-        total_images = tf.concat([stegos, covers], 0)
-        total_labels = tf.concat([stegos_labels, covers_labels], 0)
+        total_images = tf.concat([stegos, covers], 0, name="total_images")
+        total_labels = tf.concat([stegos_labels, covers_labels], 0, name="labels")
 
-        self.YedroudjModel = YedroudjModel(total_images, total_labels, 0.01)
+        self.yedroudjModel = YedroudjModel(total_images, total_labels, 0.01)
 
         self.optimize
 
@@ -325,15 +324,17 @@ class GeneratorModel:
     def loss(self, scope="gen_loss"):
         alpha = 10.0**8
         beta = 0.1
-        loss_gen_1 = tf.subtract(tf.constant(0, dtype="float32"), self.YedroudjModel.loss)
+        loss_gen_1 = tf.subtract(tf.constant(0, dtype="float32"), self.yedroudjModel.loss)
         loss_gen_2 = (self.capacity - Height*Width*embedding_rate)**2
+        tf.summary.scalar('gen_capacity_loss', loss_gen_2)
         loss_gen = alpha*loss_gen_1 + beta*loss_gen_2
+        tf.summary.scalar('gen_loss', loss_gen)
         return loss_gen
 
     @define_scope
     def optimize(self, scope="gen_optimize"):
         optimizer = tf.train.RMSPropOptimizer(
-            self.learning_rate, decay=0.9999, momentum=0.95)
+            self.learning_rate, decay=0.9999, momentum=0.95, name="gen_optimize")
         gen_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
         return optimizer.minimize(self.loss, var_list=gen_vars)

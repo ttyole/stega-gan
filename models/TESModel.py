@@ -31,7 +31,6 @@ class TESModel:
                             trainable=True, name="l_dense_3")
         x = tf.layers.dense(x, 1, activation=tf.nn.sigmoid,
                             trainable=True, name="l_dense_4")
-        tf.summary.histogram("left", x)
         y = self.prob_map
         y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid,
                             trainable=True, name="r_dense_1")
@@ -44,33 +43,32 @@ class TESModel:
         y = tf.layers.dense(y, 1, activation=tf.nn.sigmoid,
                             trainable=True, name="r_dense_4")
         y = tf.subtract(y, 1, name="r_sub_3")
-        tf.summary.histogram("right", y)
 
         x = tf.add(x, y, name="lr_add")
-        tf.summary.histogram("sum", x)
         return x
 
-    @define_scope(scope="tes_add")
+    @define_scope(scope="tes_add") # pylint: disable=no-value-for-parameter
     def generate_image(self):
         return tf.add(self.tes_prediction, self.images)
 
-    @define_scope(scope="tes_optimize")
+    @define_scope(scope="tes_optimize") # pylint: disable=no-value-for-parameter
     def optimize(self):
         diff = tf.subtract(self.label,  tf.squeeze(self.tes_prediction))
         loss = tf.reduce_mean(tf.square(diff))
-        tf.summary.scalar('loss', loss)
+        tf.summary.scalar('tes_loss', loss)
         optimizer = tf.train.RMSPropOptimizer(0.01)
+
         tes_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='tes')
         return (optimizer.minimize(loss, var_list=tes_vars), loss)
 
-    @define_scope(scope="tes_error")
+    @define_scope(scope="tes_error") # pylint: disable=no-value-for-parameter
     def error(self):
         diff = tf.subtract(self.label,  tf.squeeze(self.tes_prediction))
         loss = tf.reduce_mean(tf.square(diff))
         num_diff = tf.reduce_mean(tf.to_float(tf.not_equal(
             self.label, tf.squeeze(self.tes_prediction))))
-        tf.summary.scalar('num_diff', num_diff)
+        tf.summary.scalar('tes_num_diff', num_diff)
         return (loss, num_diff)
 
 

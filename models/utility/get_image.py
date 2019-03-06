@@ -135,6 +135,7 @@ class CoverLoader:
                   isfile(cover_path+f)]       
         self.cover_files_left = self.cover_files
         self.cover_files_size = len(self.cover_files)
+        self.number_of_batches = int(self.cover_files_size / batch_size)
 
         random.shuffle(self.cover_files_left)
 
@@ -142,14 +143,14 @@ class CoverLoader:
         """Batch will contain batch_size cover images
             The function returns a list containing batch_size tensors of size
             (image_height, image_width, 1)"""
-        
+        restartedFromFirstBatch = False
         if(self.batch_size > len(self.cover_files_left)):
             self.cover_files_left = self.cover_files
-            random.shuffle(self.cover_files_left)
+            restartedFromFirstBatch = True
 
         batch_files = self.cover_files_left[:self.batch_size]
         self.cover_files_left = self.cover_files_left[self.batch_size:]
 
         batch = [np.expand_dims(read_pgm(cover), axis=2) for cover in batch_files]
 
-        return batch
+        return (batch, restartedFromFirstBatch)

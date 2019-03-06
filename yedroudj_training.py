@@ -10,8 +10,8 @@ dir = os.path.dirname(os.path.realpath(__file__))
 
 Height, Width = 512, 512
 
-cover_path = os.getenv("COVER_PATH", dir + "/cover-10/")
-stego_path = os.getenv("STEGO_PATH", dir + "/stego-10/")
+cover_path = os.getenv("COVER_PATH", dir + "/cover/")
+stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
 
 batch_size = 2
 initial_learning_rate = 0.01
@@ -28,14 +28,16 @@ def train_yedrouj():
     print("Launching training")
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+
         merged_summary = tf.summary.merge_all()
-        summaries_dir = "/tmp/yedroudj/v1/"
+        summaries_dir = "./.tensorboards-logs/yedroudj/v2/"
         train_writer = tf.summary.FileWriter(
             summaries_dir + "train")
         validation_writer = tf.summary.FileWriter(
             summaries_dir + "/validation")
         train_writer.add_graph(sess.graph)
         validation_writer.add_graph(sess.graph)
+
         dataLoader = DataLoader(cover_path, stego_path, batch_size)
         for epoch in range(max_epochs):
             start = time.time()
