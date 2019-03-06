@@ -16,7 +16,9 @@ def train_tes():
     label = tf.placeholder(tf.float32, [None])
     model = TESModel(prob_map, label)
 
-    saver = tf.train.Saver()
+    tes_vars = tf.get_collection(
+        tf.GraphKeys.TRAINABLE_VARIABLES, scope='tes')
+    tes_saver = tf.train.Saver(var_list=tes_vars)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -56,7 +58,7 @@ def train_tes():
                                                   label: labels_test})
                 validation_writer.add_summary(s, i)
         print("Optimization Finished!")
-        saver.save(sess, './saves/tes/tes')
+        tes_saver.save(sess, './saves/tes/tes')
         print("Model saved")
 
 
@@ -69,8 +71,10 @@ def restore_tes():
     model = TESModel(prob_map, label)
 
     with tf.Session() as sess:
-        saver = tf.train.Saver()
-        saver.restore(sess, tf.train.latest_checkpoint(
+        tes_vars = tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, scope='tes')
+        tes_saver = tf.train.Saver(var_list=tes_vars)
+        tes_saver.restore(sess, tf.train.latest_checkpoint(
             dir + '/saves/tes'))  # search for checkpoint file
         prob_maps_test = np.random.randn(
             testing_batch_size, Height, Width, 2)
@@ -78,13 +82,13 @@ def restore_tes():
 
         (loss, num_diff) = sess.run(
             model.error, {prob_map: prob_maps_test, label: labels_test})
-        print('Test loss {:6.2f} '.format(loss))
+        print('Test loss {:6.9f} '.format(loss))
         print('% Diff {:6.2f}% '.format(num_diff * 100))
 
 
 def main():
-    train_tes()
-    # restore_tes()
+    # train_tes()
+    restore_tes()
 
 
 if __name__ == '__main__':

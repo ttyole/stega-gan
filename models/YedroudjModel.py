@@ -31,7 +31,7 @@ class YedroudjModel:
         self.optimize
         self.error
 
-    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator")  # pylint: disable=no-value-for-parameter
+    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator", reuse = tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
     def disc_prediction(self):
         x = self.images
         filter0 = tf.Variable(srm_filters, name="srm_filters", trainable=False)

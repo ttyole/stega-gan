@@ -12,10 +12,13 @@ class TESModel:
         self.label = label
         self.images = images
         self.tes_prediction
-        self.optimize
-        self.error
+        if label is not None:
+            self.optimize
+            self.error
+        if images is not None:
+            self.generate_image
 
-    @define_scope(initializer=tf.initializers.truncated_normal(0, 1), scope="tes_predict")  # pylint: disable=no-value-for-parameter
+    @define_scope(initializer=tf.initializers.truncated_normal(0, 1), scope="tes_predict", reuse = tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
     def tes_prediction(self):
         x = self.prob_map
         x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid,

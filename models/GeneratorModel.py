@@ -1,17 +1,15 @@
 from utility.wrappers import define_scope
 import tensorflow as tf
 import numpy as np
+from TESModel import TESModel
+from YedroudjModel import YedroudjModel
 import os
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
-
-cover_path = os.getenv("COVER_PATH", dir + "/cover/")
-stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
-
 Height, Width = 512, 512
 embedding_rate = 0.4
-srm_filters = np.float32(np.load('srm.npy'))
+srm_filters = np.float32(np.load(dir + '/utility/srm.npy'))
 srm_filters = np.swapaxes(srm_filters, 0, 1)
 srm_filters = np.swapaxes(srm_filters, 1, 2)
 srm_filters = np.expand_dims(srm_filters, axis=2)
@@ -19,15 +17,30 @@ srm_filters = np.expand_dims(srm_filters, axis=2)
 
 class GeneratorModel:
 
-    def __init__(self, covers, intermediate_probmaps, discriminator_loss):
+    def __init__(self, covers, batch_size):
         self.images = covers
 
-        self.intermediate_probmaps = intermediate_probmaps
-        self.discriminator_loss = discriminator_loss
 
         self.learning_rate = 1e-10
         self.gamma = 0.1
         self.generator_prediction
+
+        tes_rand_maps = tf.random.uniform(tf.shape(self.generator_prediction))
+        tes_prob_maps = tf.concat([self.generator_prediction, tes_rand_maps], 3)
+
+        self.TESModel = TESModel(tes_prob_maps, images = covers)
+        stegos = self.TESModel.generate_image
+
+        covers_labels = tf.constant([0, 1], dtype="float32")
+        covers_labels = tf.broadcast_to(covers_labels, [batch_size, 2])
+        stegos_labels = tf.constant([1, 0], dtype="float32")
+        stegos_labels = tf.broadcast_to(stegos_labels, [batch_size, 2])
+
+        total_images = tf.concat([stegos, covers], 0)
+        total_labels = tf.concat([stegos_labels, covers_labels], 0)
+
+        self.YedroudjModel = YedroudjModel(total_images, total_labels, 0.01)
+
         self.optimize
 
     @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="generator")  # pylint: disable=no-value-for-parameter
@@ -302,17 +315,17 @@ class GeneratorModel:
 
     @define_scope
     def capacity(self, scope="gen_capacity"):
-        def f(x): return x - x*np.log(x) / \
-            np.log(2) - (1-x)*np.log(1-x)/np.log(2)
+        b2 = tf.constant(2, dtype="float32")
+        def f(x): return x - x * tf.log(x) / tf.log(b2) - (1-x)*tf.log(1-x)/tf.log(b2)
         gen_capacity = tf.reduce_sum(
-            tf.map_fn(f, self.intermediate_probmaps, dtype=tf.float32), name="capacity")
+            tf.map_fn(f, self.generator_prediction, dtype=tf.float32), name="capacity")
         return gen_capacity
 
     @define_scope
     def loss(self, scope="gen_loss"):
         alpha = 10.0**8
         beta = 0.1
-        loss_gen_1 = - self.discriminator_loss
+        loss_gen_1 = tf.subtract(tf.constant(0, dtype="float32"), self.YedroudjModel.loss)
         loss_gen_2 = (self.capacity - Height*Width*embedding_rate)**2
         loss_gen = alpha*loss_gen_1 + beta*loss_gen_2
         return loss_gen
