@@ -17,7 +17,7 @@ srm_filters = np.expand_dims(srm_filters, axis=2)
 
 class GeneratorModel:
 
-    def __init__(self, covers, batch_size, rand_maps):
+    def __init__(self, covers, rand_maps):
         self.images = covers
 
         self.learning_rate = 1e-10
@@ -25,7 +25,7 @@ class GeneratorModel:
         self.capacity
 
         tes_prob_maps = tf.concat(
-            [ rand_maps, self.generator_prediction], 3, name="prob_maps_for_TES")
+            [rand_maps, self.generator_prediction], 3, name="prob_maps_for_TES")
 
         self.tesModel = TESModel(tes_prob_maps, images=covers)
         stegos = self.tesModel.generate_image
@@ -33,11 +33,11 @@ class GeneratorModel:
         covers_label = tf.constant(
             [0, 1], dtype="float32", name="covers_label")
         covers_labels = tf.broadcast_to(
-            covers_label, [batch_size, 2], name="covers_labels")
+            covers_label, [tf.shape(covers)[0], 2], name="covers_labels")
         stegos_label = tf.constant(
             [1, 0], dtype="float32", name="stegos_label")
         stegos_labels = tf.broadcast_to(
-            stegos_label, [batch_size, 2], name="stegos_labels")
+            stegos_label, [tf.shape(covers)[0], 2], name="stegos_labels")
 
         total_images = tf.concat([stegos, covers], 0, name="total_images")
         total_labels = tf.concat(
@@ -48,7 +48,7 @@ class GeneratorModel:
         self.loss
         self.optimize
 
-    @define_scope(initializer=tf.initializers.truncated_normal(mean = 0, stddev=0.01), scope="generator")  # pylint: disable=no-value-for-parameter
+    @define_scope(initializer=tf.initializers.truncated_normal(mean=0, stddev=0.01), scope="generator")  # pylint: disable=no-value-for-parameter
     def generator_prediction(self):
         x = self.images
 
@@ -327,7 +327,7 @@ class GeneratorModel:
         b2 = tf.constant(2, dtype="float32")
         x = self.generator_prediction
         gen_capacity = tf.reduce_sum(
-            x - x * tf.log(x + epsilon) / tf.log(b2) - (1-x)*tf.log(1-x)/tf.log(b2))
+            x - x * tf.log(x + epsilon) / tf.log(b2) - (1-x)*tf.log(1-x)/tf.log(b2)) / tf.cast(tf.shape(x)[0], "float32")
         tf.summary.scalar('gen_capacity', gen_capacity)
         return gen_capacity
 
@@ -337,7 +337,8 @@ class GeneratorModel:
         beta = tf.constant(0.001, dtype="float32", name="beta")
         heightT = tf.constant(Height, dtype="float32", name="height")
         widthT = tf.constant(Width, dtype="float32", name="width")
-        embedding_rateT = tf.constant(embedding_rate, dtype="float32", name="embedding_rate")
+        embedding_rateT = tf.constant(
+            embedding_rate, dtype="float32", name="embedding_rate")
         loss_gen_1 = tf.subtract(tf.constant(
             0, dtype="float32"), self.yedroudjModel.loss)
         loss_gen_2 = (self.capacity - heightT*widthT*embedding_rateT)**2

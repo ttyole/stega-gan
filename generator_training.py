@@ -27,7 +27,7 @@ def train_generator():
         tf.float32, [None, Height, Width, 1], name="covers")
     rand_maps = tf.placeholder(
         tf.float32, [None, Height, Width, 1], name="rand_maps")
-    generator = GeneratorModel(covers, batch_size, rand_maps)
+    generator = GeneratorModel(covers, rand_maps)
 
     saver = tf.train.Saver()
 
