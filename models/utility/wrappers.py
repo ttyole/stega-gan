@@ -16,7 +16,7 @@ def doublewrap(function):
 
 
 @doublewrap
-def define_scope(function, scope=None, *args, **kwargs):
+def define_scope(function, scope=None, initializer = None, *args, **kwargs):
     """
     A decorator for functions that define TensorFlow operations. The wrapped
     function will only be executed once. Subsequent calls to it will directly
@@ -33,7 +33,7 @@ def define_scope(function, scope=None, *args, **kwargs):
     @functools.wraps(function)
     def decorator(self):
         if not hasattr(self, attribute):
-            with tf.variable_scope(name, *args, **kwargs):
+            with tf.variable_scope(name, initializer, *args, **kwargs):
                 setattr(self, attribute, function(self))
         return getattr(self, attribute)
     return decorator

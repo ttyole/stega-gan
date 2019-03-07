@@ -31,7 +31,7 @@ class YedroudjModel:
         self.optimize
         self.error
 
-    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator", reuse = tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
+    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator", reuse=tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
     def disc_prediction(self):
         x = self.images
         filter0 = tf.Variable(srm_filters, name="srm_filters", trainable=False)
@@ -108,24 +108,24 @@ class YedroudjModel:
         x = tf.nn.softmax(x)
         return x
 
-    @define_scope
-    def loss(self, scope="disc_loss"):
-        loss = tf.losses.softmax_cross_entropy(
-            self.labels, self.disc_prediction)
+    @define_scope(scope="disc_loss")  # pylint: disable=no-value-for-parameter
+    def loss(self):
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
+            self.labels, self.disc_prediction, name="softmax"))
         tf.summary.scalar('disc_loss', loss)
         return loss
 
-    @define_scope
-    def optimize(self, scope="disc_optimize"):
-        optimizer = tf.train.RMSPropOptimizer(
-            self.learning_rate, decay=0.9999, momentum=0.95, name="gen_optimize")
+    @define_scope(scope="disc_optimize")  # pylint: disable=no-value-for-parameter
+    def optimize(self):
+        optimizer = tf.train.GradientDescentOptimizer(
+            self.learning_rate, name="disc_optimizer")
         disc_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
         loss = self.loss
-        return (loss, optimizer.minimize(loss, var_list=disc_vars))
+        return (loss, optimizer.minimize(loss,  name="disc_optimize", var_list=disc_vars))
 
-    @define_scope
-    def error(self, scope="disc_error"):
+    @define_scope(scope="disc_error")  # pylint: disable=no-value-for-parameter
+    def error(self):
         num_diff = tf.reduce_mean(tf.cast((tf.not_equal(
             tf.argmax(self.labels, 1), tf.argmax(self.disc_prediction, 1))), tf.float32), name="num_diff")
         tf.summary.scalar('disc_num_diff', num_diff)

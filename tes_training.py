@@ -24,7 +24,7 @@ def train_tes():
         sess.run(tf.global_variables_initializer())
 
         merged_summary = tf.summary.merge_all()
-        summaries_dir = "/tmp/TES/v2/"
+        summaries_dir = "/tmp/TES/v4/"
         train_writer = tf.summary.FileWriter(
             summaries_dir + "train")
         validation_writer = tf.summary.FileWriter(
@@ -82,6 +82,9 @@ def restore_tes():
 
         (loss, num_diff) = sess.run(
             model.error, {prob_map: prob_maps_test, label: labels_test})
+        x = sess.run(
+            model.tes_prediction, {prob_map: prob_maps_test, label: labels_test})
+        print(x[0].shape)
         print('Test loss {:6.9f} '.format(loss))
         print('% Diff {:6.2f}% '.format(num_diff * 100))
 

@@ -17,32 +17,38 @@ srm_filters = np.expand_dims(srm_filters, axis=2)
 
 class GeneratorModel:
 
-    def __init__(self, covers, batch_size):
+    def __init__(self, covers, batch_size, rand_maps):
         self.images = covers
-
 
         self.learning_rate = 1e-10
         self.generator_prediction
+        self.capacity
 
-        tes_rand_maps = tf.random.uniform(tf.shape(self.generator_prediction), name="noise_for_TES")
-        tes_prob_maps = tf.concat([self.generator_prediction, tes_rand_maps], 3, name="prob_maps_for_TES")
+        tes_prob_maps = tf.concat(
+            [ rand_maps, self.generator_prediction], 3, name="prob_maps_for_TES")
 
-        self.tesModel = TESModel(tes_prob_maps, images = covers)
+        self.tesModel = TESModel(tes_prob_maps, images=covers)
         stegos = self.tesModel.generate_image
 
-        covers_label = tf.constant([0, 1], dtype="float32", name="covers_label")
-        covers_labels = tf.broadcast_to(covers_label, [batch_size, 2], name="covers_labels")
-        stegos_label = tf.constant([1, 0], dtype="float32", name="stegos_label")
-        stegos_labels = tf.broadcast_to(stegos_label, [batch_size, 2], name="stegos_labels")
+        covers_label = tf.constant(
+            [0, 1], dtype="float32", name="covers_label")
+        covers_labels = tf.broadcast_to(
+            covers_label, [batch_size, 2], name="covers_labels")
+        stegos_label = tf.constant(
+            [1, 0], dtype="float32", name="stegos_label")
+        stegos_labels = tf.broadcast_to(
+            stegos_label, [batch_size, 2], name="stegos_labels")
 
         total_images = tf.concat([stegos, covers], 0, name="total_images")
-        total_labels = tf.concat([stegos_labels, covers_labels], 0, name="labels")
+        total_labels = tf.concat(
+            [stegos_labels, covers_labels], 0, name="labels")
 
         self.yedroudjModel = YedroudjModel(total_images, total_labels, 0.01)
 
+        self.loss
         self.optimize
 
-    @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="generator")  # pylint: disable=no-value-for-parameter
+    @define_scope(initializer=tf.initializers.truncated_normal(mean = 0, stddev=0.01), scope="generator")  # pylint: disable=no-value-for-parameter
     def generator_prediction(self):
         x = self.images
 
@@ -56,6 +62,7 @@ class GeneratorModel:
         filter = tf.get_variable("conv1", shape=[7, 7, 30, 12])
         x = tf.nn.conv2d(input=x, filter=filter,
                          padding="SAME", strides=[1, 1, 1, 1])
+        tf.summary.histogram('gen_first_filter', tf.reshape(filter, [-1]))
         # Batch Normalization
         (mean, var) = tf.nn.moments(x, axes=[
             0],  keep_dims=False, name="moments1")
@@ -303,6 +310,7 @@ class GeneratorModel:
         filter = tf.get_variable("conv25", shape=[7, 7, 12, 1])
         x = tf.nn.conv2d(input=x, filter=filter,
                          padding="SAME", strides=[1, 1, 1, 1])
+        tf.summary.histogram('gen_last_filter', tf.reshape(filter, [-1]))
         (mean, var) = tf.nn.moments(x, axes=[
             0],  keep_dims=False, name="moments25")
         x = tf.nn.batch_normalization(
@@ -312,29 +320,35 @@ class GeneratorModel:
         x = tf.nn.relu(x, name='intermediate_probmaps')
         return x
 
-    @define_scope
-    def capacity(self, scope="gen_capacity"):
+    @define_scope(scope="gen_capacity")  # pylint: disable=no-value-for-parameter
+    def capacity(self):
+        epsilon = tf.constant(1e-8, dtype="float32", name="epsilon")
         b2 = tf.constant(2, dtype="float32")
-        def f(x): return x - x * tf.log(x) / tf.log(b2) - (1-x)*tf.log(1-x)/tf.log(b2)
+        x = self.generator_prediction
         gen_capacity = tf.reduce_sum(
-            tf.map_fn(f, self.generator_prediction, dtype=tf.float32), name="capacity")
+            x - x * tf.log(x + epsilon) / tf.log(b2) - (1-x)*tf.log(1-x)/tf.log(b2))
+        tf.summary.scalar('gen_capacity', gen_capacity)
         return gen_capacity
 
-    @define_scope
-    def loss(self, scope="gen_loss"):
-        alpha = 10.0**8
-        beta = 0.1
-        loss_gen_1 = tf.subtract(tf.constant(0, dtype="float32"), self.yedroudjModel.loss)
-        loss_gen_2 = (self.capacity - Height*Width*embedding_rate)**2
+    @define_scope(scope="gen_loss")  # pylint: disable=no-value-for-parameter
+    def loss(self):
+        alpha = tf.constant(1e8, dtype="float32", name="alpha")
+        beta = tf.constant(0.001, dtype="float32", name="beta")
+        heightT = tf.constant(Height, dtype="float32", name="height")
+        widthT = tf.constant(Width, dtype="float32", name="width")
+        embedding_rateT = tf.constant(embedding_rate, dtype="float32", name="embedding_rate")
+        loss_gen_1 = tf.subtract(tf.constant(
+            0, dtype="float32"), self.yedroudjModel.loss)
+        loss_gen_2 = (self.capacity - heightT*widthT*embedding_rateT)**2
         tf.summary.scalar('gen_capacity_loss', loss_gen_2)
         loss_gen = alpha*loss_gen_1 + beta*loss_gen_2
         tf.summary.scalar('gen_loss', loss_gen)
         return loss_gen
 
-    @define_scope
-    def optimize(self, scope="gen_optimize"):
-        optimizer = tf.train.RMSPropOptimizer(
-            self.learning_rate, decay=0.9999, momentum=0.95, name="gen_optimize")
+    @define_scope(scope="gen_optimize")  # pylint: disable=no-value-for-parameter
+    def optimize(self):
+        optimizer = tf.train.GradientDescentOptimizer(
+            self.learning_rate, name="gen_optimizer")
         gen_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
-        return optimizer.minimize(self.loss, var_list=gen_vars)
+        return optimizer.minimize(self.loss, var_list=gen_vars,  name="gen_optimize")

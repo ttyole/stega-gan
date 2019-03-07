@@ -18,7 +18,7 @@ class TESModel:
         if images is not None:
             self.generate_image
 
-    @define_scope(initializer=tf.initializers.truncated_normal(0, 1), scope="tes_predict", reuse = tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
+    @define_scope(initializer=tf.initializers.truncated_normal(0, 1), scope="tes_predict", reuse=tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
     def tes_prediction(self):
         x = self.prob_map
         x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid,
@@ -29,8 +29,7 @@ class TESModel:
         x = tf.subtract(x, 0.5, name="l_sub_2")
         x = tf.layers.dense(x, 10, activation=tf.nn.sigmoid,
                             trainable=True, name="l_dense_3")
-        x = tf.layers.dense(x, 1, activation=tf.nn.sigmoid,
-                            trainable=True, name="l_dense_4")
+        x = tf.layers.dense(x, 1, trainable=True, name="l_dense_4")
         y = self.prob_map
         y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid,
                             trainable=True, name="r_dense_1")
@@ -40,18 +39,18 @@ class TESModel:
         y = tf.subtract(y, 0.5, name="r_sub_2")
         y = tf.layers.dense(y, 10, activation=tf.nn.sigmoid,
                             trainable=True, name="r_dense_3")
-        y = tf.layers.dense(y, 1, activation=tf.nn.sigmoid,
-                            trainable=True, name="r_dense_4")
+        y = tf.layers.dense(y, 1, trainable=True, name="r_dense_4")
         y = tf.subtract(y, 1, name="r_sub_3")
 
         x = tf.add(x, y, name="lr_add")
+        tf.summary.histogram('tes_sum', x)
         return x
 
-    @define_scope(scope="tes_add") # pylint: disable=no-value-for-parameter
+    @define_scope(scope="tes_add")  # pylint: disable=no-value-for-parameter
     def generate_image(self):
         return tf.add(self.tes_prediction, self.images)
 
-    @define_scope(scope="tes_optimize") # pylint: disable=no-value-for-parameter
+    @define_scope(scope="tes_optimize")  # pylint: disable=no-value-for-parameter
     def optimize(self):
         diff = tf.subtract(self.label,  tf.squeeze(self.tes_prediction))
         loss = tf.reduce_mean(tf.square(diff))
@@ -62,7 +61,7 @@ class TESModel:
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='tes')
         return (optimizer.minimize(loss, var_list=tes_vars), loss)
 
-    @define_scope(scope="tes_error") # pylint: disable=no-value-for-parameter
+    @define_scope(scope="tes_error")  # pylint: disable=no-value-for-parameter
     def error(self):
         diff = tf.subtract(self.label,  tf.squeeze(self.tes_prediction))
         loss = tf.reduce_mean(tf.square(diff))
@@ -76,6 +75,6 @@ def staircase(prob_map):
     n, p = prob_map[0], prob_map[1]
     if n < p / 2:
         return -1.0
-    if p > 1 - p / 2:
+    if n > 1 - p / 2:
         return 1.0
     return 0
