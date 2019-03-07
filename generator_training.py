@@ -39,10 +39,10 @@ def train_generator():
         merged_summary = tf.summary.merge_all()
         image_summaries = [tf.summary.image("cover", covers, max_outputs=2),
                            tf.summary.image(
-                               "costs_map", generator.generator_prediction),
+                               "costs_map", generator.generator_prediction, max_outputs=2),
                            tf.summary.image("modification_map",
-                                            generator.tesModel.tes_prediction),
-                           tf.summary.image("stego", generator.tesModel.generate_image)]
+                                            tf.abs(generator.tesModel.tes_prediction), max_outputs=2),
+                           tf.summary.image("stego", generator.tesModel.generate_image, max_outputs=2)]
         image_summary = tf.summary.merge(image_summaries)
         summaries_dir = "./.tensorboards-logs/gan/v1/"
         writer = tf.summary.FileWriter(summaries_dir)
@@ -63,7 +63,7 @@ def train_generator():
             cover_batch = coverLoader.getNextCoverBatch()
             rand_maps_batch = np.random.rand(batch_size, Height, Width, 1)
             if (iteration == 0):
-                first_images = cover_batch[:2]
+                first_images = cover_batch
             if (iteration % log_images_every == 0):
                 # Run the image summary at the start of each batch
                 s = sess.run(image_summary,

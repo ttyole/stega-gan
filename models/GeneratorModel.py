@@ -318,6 +318,7 @@ class GeneratorModel:
         x = tf.nn.sigmoid(x)
         x = tf.subtract(x, 0.5)
         x = tf.nn.relu(x, name='intermediate_probmaps')
+        tf.summary.histogram('probmaps', x)
         return x
 
     @define_scope(scope="gen_capacity")  # pylint: disable=no-value-for-parameter
