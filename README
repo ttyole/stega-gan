@@ -7,7 +7,7 @@ sudo nvidia-docker run --runtime=nvidia -it -v /media/data/cover/cover:/tf/app/c
                     -p 80:80/tcp ttyole/stega-gan:latest
 
 python generator_training.py &
-tensorboard --port 80 --logdir ./.tensorboards-logs/gan/v1 &
+tensorboard --port 80 --logdir ./.tensorboards-logs/gan/v2 &
 
 
 
