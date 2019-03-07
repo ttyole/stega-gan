@@ -19,6 +19,8 @@ Height, Width = 512, 512
 max_iterations = 200000
 log_scalars_every = 10
 log_images_every = 50
+log_metadata_every = 50
+save_every = 1000
 batch_size = 6
 
 
@@ -65,10 +67,11 @@ def train_generator():
             if (iteration == 0):
                 first_images = cover_batch
             if (iteration % log_images_every == 0):
-                # Run the image summary at the start of each batch
+                # Run the image summary
                 s = sess.run(image_summary,
                              {covers: first_images, rand_maps: rand_maps_batch})
                 writer.add_summary(s, iteration)
+                run_metadata = tf.RunMetadata()
 
             if (iteration % log_scalars_every == 0 and iteration != 0):
                 # Compute errors and loss, add to summary and log
@@ -90,15 +93,29 @@ def train_generator():
                     1000 * (time.time() - start) / 60 / log_scalars_every))
                 start = time.time()
 
+            if (iteration % save_every == 0 and iteration != 0):
+                saver.save(sess, './saves/gan/gan-{}'.format(iteration))
+                print("Saved")
+
             # OPTIMIZE
-            sess.run(generator.yedroudjModel.optimize,
-                     {covers: cover_batch, rand_maps: rand_maps_batch})
-            sess.run(generator.optimize,
-                     {covers: cover_batch, rand_maps: rand_maps_batch})
+            if (iteration % log_metadata_every == 0):
+                run_options = tf.RunOptions(
+                    trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+                sess.run([generator.yedroudjModel.optimize, generator.optimize],
+                         {covers: cover_batch, rand_maps: rand_maps_batch}, options=run_options, run_metadata=run_metadata)
+                writer.add_run_metadata(
+                    run_metadata, 'step%d' % iteration, iteration)
+            else:
+                sess.run(generator.yedroudjModel.optimize,
+                         {covers: cover_batch, rand_maps: rand_maps_batch})
+                sess.run(generator.optimize,
+                         {covers: cover_batch, rand_maps: rand_maps_batch})
 
             iteration += 1
 
-        saver.save(sess, './saves/gan/gan')
+        saver.save(sess, './saves/gan/gan-{}'.format(iteration))
+        print("Saved")
         print("Optimization Finished!")
 
 

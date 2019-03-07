@@ -17,10 +17,11 @@ srm_filters = np.expand_dims(srm_filters, axis=2)
 
 class GeneratorModel:
 
-    def __init__(self, covers, rand_maps):
+    def __init__(self, covers, rand_maps, is_training = True):
         self.images = covers
 
         self.learning_rate = 1e-10
+        self.is_training = is_training
         self.generator_prediction
         self.capacity
 
@@ -64,10 +65,12 @@ class GeneratorModel:
                          padding="SAME", strides=[1, 1, 1, 1])
         tf.summary.histogram('gen_first_filter', tf.reshape(filter, [-1]))
         # Batch Normalization
+
         (mean, var) = tf.nn.moments(x, axes=[
             0],  keep_dims=False, name="moments1")
         x = tf.nn.batch_normalization(
             x, mean=mean, variance=var, scale=None, offset=None, variance_epsilon=0.00001)
+
         # Rectified Linear Unit
         x = tf.nn.relu(x)
 
@@ -254,6 +257,7 @@ class GeneratorModel:
             0],  keep_dims=False, name="moments19")
         y = tf.nn.batch_normalization(
             y, mean=mean, variance=var, scale=None, offset=None, variance_epsilon=0.00001)
+        y = tf.layers.batch_normalization(y, )
         y = tf.nn.relu(y)
         filter = tf.get_variable("conv20", shape=[7, 7, 12, 12])
         y = tf.nn.conv2d(input=y, filter=filter,
@@ -334,7 +338,7 @@ class GeneratorModel:
     @define_scope(scope="gen_loss")  # pylint: disable=no-value-for-parameter
     def loss(self):
         alpha = tf.constant(1e8, dtype="float32", name="alpha")
-        beta = tf.constant(0.001, dtype="float32", name="beta")
+        beta = tf.constant(0.1, dtype="float32", name="beta")
         heightT = tf.constant(Height, dtype="float32", name="height")
         widthT = tf.constant(Width, dtype="float32", name="width")
         embedding_rateT = tf.constant(
