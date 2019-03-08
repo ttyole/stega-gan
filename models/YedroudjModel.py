@@ -21,15 +21,16 @@ srm_filters = np.expand_dims(srm_filters, axis=2)
 
 class YedroudjModel:
 
-    def __init__(self, images, labels, learning_rate):
+    def __init__(self, images, labels, learning_rate, is_training=True):
         self.images = images
         self.labels = labels
         self.learning_rate = learning_rate
-        self.gamma = 0.1
+        self.is_training = is_training
         self.disc_prediction
         self.loss
-        self.optimize
         self.error
+        if is_training:
+            self.optimize
 
     @define_scope(initializer=tf.contrib.layers.xavier_initializer(), scope="discriminator", reuse=tf.AUTO_REUSE)  # pylint: disable=no-value-for-parameter
     def disc_prediction(self):
@@ -42,11 +43,15 @@ class YedroudjModel:
         x = tf.nn.conv2d(input=x, filter=filter1,
                          padding="SAME", strides=[1, 1, 1, 1])
         x = tf.abs(x)
-        (mean1, variance1) = tf.nn.moments(
-            x, axes=[0],  keep_dims=False, name="moments1")
-        scale1 = tf.get_variable("scale1", shape=[1])
-        x = tf.nn.batch_normalization(
-            x, mean=mean1, variance=variance1, scale=scale1, offset=None, variance_epsilon=0.00001, name="batchnorm1")
+        # (mean1, variance1) = tf.nn.moments(
+        #     x, axes=[0],  keep_dims=False, name="moments1")
+        # scale1 = tf.get_variable("scale1", shape=[1])
+        # x = tf.nn.batch_normalization(
+        #     x, mean=mean1, variance=variance1, scale=scale1, offset=None, variance_epsilon=0.00001, name="batchnorm1")
+
+        x = tf.layers.batch_normalization(
+            x, epsilon=0.00001, scale=True, training=self.is_training)
+
         trunc1 = tf.Variable(
             3, name="trunc1", dtype="float32", trainable=False)
         x = tf.clip_by_value(x, clip_value_max=trunc1,
@@ -55,11 +60,13 @@ class YedroudjModel:
         filter2 = tf.get_variable("filter2", shape=[5, 5, 30, 30])
         x = tf.nn.conv2d(x, filter=filter2,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean2, variance2) = tf.nn.moments(
-            x, axes=[0],  keep_dims=False, name="moments2")
-        scale2 = tf.get_variable("scale2", shape=[1])
-        x = tf.nn.batch_normalization(
-            x, mean=mean2, variance=variance2, scale=scale2, offset=None, variance_epsilon=0.00001, name="batchnorm2")
+        # (mean2, variance2) = tf.nn.moments(
+        #     x, axes=[0],  keep_dims=False, name="moments2")
+        # scale2 = tf.get_variable("scale2", shape=[1])
+        # x = tf.nn.batch_normalization(
+        #     x, mean=mean2, variance=variance2, scale=scale2, offset=None, variance_epsilon=0.00001, name="batchnorm2")
+        x = tf.layers.batch_normalization(
+            x, epsilon=0.00001, scale=True, training=self.is_training)
         trunc2 = tf.Variable(
             2, name="trunc2", dtype="float32", trainable=False)
         x = tf.clip_by_value(x, clip_value_max=trunc2,
@@ -70,11 +77,13 @@ class YedroudjModel:
         filter3 = tf.get_variable("filter3", shape=[3, 3, 30, 32])
         x = tf.nn.conv2d(x, filter=filter3,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean3, variance3) = tf.nn.moments(
-            x, axes=[0],  keep_dims=False, name="moments3")
-        scale3 = tf.get_variable("scale3", shape=[1])
-        x = tf.nn.batch_normalization(
-            x, mean=mean3, variance=variance3, scale=scale3, offset=None, variance_epsilon=0.00001, name="batchnorm3")
+        # (mean3, variance3) = tf.nn.moments(
+        #     x, axes=[0],  keep_dims=False, name="moments3")
+        # scale3 = tf.get_variable("scale3", shape=[1])
+        # x = tf.nn.batch_normalization(
+        #     x, mean=mean3, variance=variance3, scale=scale3, offset=None, variance_epsilon=0.00001, name="batchnorm3")
+        x = tf.layers.batch_normalization(
+            x, epsilon=0.00001, scale=True, training=self.is_training)
         x = tf.nn.relu(x)
         x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[
                            1, 2, 2, 1], padding="SAME")
@@ -82,11 +91,13 @@ class YedroudjModel:
         filter4 = tf.get_variable("filter4", shape=[3, 3, 32, 64])
         x = tf.nn.conv2d(x, filter=filter4,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean4, variance4) = tf.nn.moments(
-            x, axes=[0],  keep_dims=False, name="moments4")
-        scale4 = tf.get_variable("scale4", shape=[1])
-        x = tf.nn.batch_normalization(
-            x, mean=mean4, variance=variance4, scale=scale4, offset=None, variance_epsilon=0.00001, name="batchnorm4")
+        # (mean4, variance4) = tf.nn.moments(
+        #     x, axes=[0],  keep_dims=False, name="moments4")
+        # scale4 = tf.get_variable("scale4", shape=[1])
+        # x = tf.nn.batch_normalization(
+        #     x, mean=mean4, variance=variance4, scale=scale4, offset=None, variance_epsilon=0.00001, name="batchnorm4")
+        x = tf.layers.batch_normalization(
+            x, epsilon=0.00001, scale=True, training=self.is_training)
         x = tf.nn.relu(x)
         x = tf.nn.avg_pool(x, ksize=[1, 5, 5, 1], strides=[
                            1, 2, 2, 1], padding="SAME")
@@ -94,11 +105,13 @@ class YedroudjModel:
         filter5 = tf.get_variable("filter5", shape=[3, 3, 64, 128])
         x = tf.nn.conv2d(x, filter=filter5,
                          padding="SAME", strides=[1, 1, 1, 1])
-        (mean5, variance5) = tf.nn.moments(
-            x, axes=[0],  keep_dims=False, name="moments5")
-        scale5 = tf.get_variable("scale5", shape=[1])
-        x = tf.nn.batch_normalization(
-            x, mean=mean5, variance=variance5, scale=scale5, offset=None, variance_epsilon=0.00001, name="batchnorm5")
+        # (mean5, variance5) = tf.nn.moments(
+        #     x, axes=[0],  keep_dims=False, name="moments5")
+        # scale5 = tf.get_variable("scale5", shape=[1])
+        # x = tf.nn.batch_normalization(
+        #     x, mean=mean5, variance=variance5, scale=scale5, offset=None, variance_epsilon=0.00001, name="batchnorm5")
+        x = tf.layers.batch_normalization(
+            x, epsilon=0.00001, scale=True, training=self.is_training)
         x = tf.nn.relu(x)
         x = tf.reduce_mean(x, [1, 2], name='global_pool', keepdims=False)
 
@@ -122,7 +135,10 @@ class YedroudjModel:
         disc_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
         loss = self.loss
-        return (loss, optimizer.minimize(loss,  name="disc_optimize", var_list=disc_vars))
+        train_op = optimizer.minimize(loss,  name="disc_optimize", var_list=disc_vars)
+        disc_update_ops = tf.get_collection(
+            tf.GraphKeys.UPDATE_OPS, scope='discriminator')
+        return (loss, tf.group([train_op, disc_update_ops]))
 
     @define_scope(scope="disc_error")  # pylint: disable=no-value-for-parameter
     def error(self):

@@ -20,7 +20,7 @@ max_iterations = 200000
 log_scalars_every = 10
 log_images_every = 50
 log_metadata_every = 50
-save_every = 1000
+save_every = 100
 batch_size = 6
 
 
@@ -39,14 +39,14 @@ def train_generator():
 
         # Create a merged_summary and a separate image summary
         merged_summary = tf.summary.merge_all()
-        image_summaries = [tf.summary.image("cover", covers[:2], max_outputs=2),
+        image_summaries = [tf.summary.image("cover", covers[:4], max_outputs=4),
                            tf.summary.image(
-                               "costs_map", generator.generator_prediction[:2], max_outputs=2),
+                               "costs_map", generator.generator_prediction[:4], max_outputs=4),
                            tf.summary.image("modification_map",
-                                            tf.abs(generator.tesModel.tes_prediction[:2]), max_outputs=2),
-                           tf.summary.image("stego", generator.tesModel.generate_image[:2], max_outputs=2)]
+                                            tf.abs(generator.tesModel.tes_prediction[:4]), max_outputs=4),
+                           tf.summary.image("stego", generator.tesModel.generate_image[:4], max_outputs=4)]
         image_summary = tf.summary.merge(image_summaries)
-        summaries_dir = "./.tensorboards-logs/gan/v2/"
+        summaries_dir = "./.tensorboards-logs/gan/v3/"
         writer = tf.summary.FileWriter(summaries_dir)
         writer.add_graph(sess.graph)
 
@@ -75,23 +75,23 @@ def train_generator():
 
             if (iteration % log_scalars_every == 0 and iteration != 0):
                 # Compute errors and loss, add to summary and log
-                (loss_disc, num_diff) = sess.run(generator.yedroudjModel.error,
-                                                 {covers: cover_batch, rand_maps: rand_maps_batch})
-                loss_gen = sess.run(generator.loss,
-                                    {covers: cover_batch, rand_maps: rand_maps_batch})
+                # (loss_disc, num_diff) = sess.run(generator.yedroudjModel.error,
+                #                                  {covers: cover_batch, rand_maps: rand_maps_batch})
+                # loss_gen = sess.run(generator.loss,
+                                    # {covers: cover_batch, rand_maps: rand_maps_batch})
                 s = sess.run(merged_summary,
                              {covers: cover_batch, rand_maps: rand_maps_batch})
                 writer.add_summary(s, iteration)
 
-                print('\n\n{:6.2f}% of current epoch'.format(
-                    100 * iteration / coverLoader.number_of_batches))
-                print('% Diff on discriminator {:6.2f}% '.format(
-                    num_diff * 100))
-                print('Disc loss {:6.9f}'.format(loss_disc))
-                print('Gen loss {:6.9f}'.format(loss_gen))
-                print('Average time for 1000 iterations {:10.3f}min'.format(
-                    1000 * (time.time() - start) / 60 / log_scalars_every))
-                start = time.time()
+                # print('\n\n{:6.2f}% of current epoch'.format(
+                #     100 * iteration / coverLoader.number_of_batches))
+                # print('% Diff on discriminator {:6.2f}% '.format(
+                #     num_diff * 100))
+                # print('Disc loss {:6.9f}'.format(loss_disc))
+                # print('Gen loss {:6.9f}'.format(loss_gen))
+                # print('Average time for 1000 iterations {:10.3f}min'.format(
+                #     1000 * (time.time() - start) / 60 / log_scalars_every))
+                # start = time.time()
 
             if (iteration % save_every == 0 and iteration != 0):
                 saver.save(sess, './saves/gan/gan-{}'.format(iteration))
