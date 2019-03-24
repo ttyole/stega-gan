@@ -57,6 +57,10 @@ def train_generator():
         tes_saver.restore(sess, tf.train.latest_checkpoint(
             dir + '/saves/tes'))  # search for checkpoint file
 
+        # Restore previously trained variables
+        saver.restore(sess, tf.train.latest_checkpoint(
+            dir + '/saves/gan'))  # search for checkpoint file
+
         # Initialize loaders and iteration markers
         coverLoader = CoverLoader(cover_path, batch_size)
         iteration = 0
@@ -75,23 +79,23 @@ def train_generator():
 
             if (iteration % log_scalars_every == 0 and iteration != 0):
                 # Compute errors and loss, add to summary and log
-                # (loss_disc, num_diff) = sess.run(generator.yedroudjModel.error,
-                #                                  {covers: cover_batch, rand_maps: rand_maps_batch})
-                # loss_gen = sess.run(generator.loss,
-                                    # {covers: cover_batch, rand_maps: rand_maps_batch})
+                (loss_disc, num_diff) = sess.run(generator.yedroudjModel.error,
+                                                 {covers: cover_batch, rand_maps: rand_maps_batch})
+                loss_gen = sess.run(generator.loss,
+                                    {covers: cover_batch, rand_maps: rand_maps_batch})
                 s = sess.run(merged_summary,
                              {covers: cover_batch, rand_maps: rand_maps_batch})
                 writer.add_summary(s, iteration)
 
-                # print('\n\n{:6.2f}% of current epoch'.format(
-                #     100 * iteration / coverLoader.number_of_batches))
-                # print('% Diff on discriminator {:6.2f}% '.format(
-                #     num_diff * 100))
-                # print('Disc loss {:6.9f}'.format(loss_disc))
-                # print('Gen loss {:6.9f}'.format(loss_gen))
-                # print('Average time for 1000 iterations {:10.3f}min'.format(
-                #     1000 * (time.time() - start) / 60 / log_scalars_every))
-                # start = time.time()
+                print('\n\n{:6.2f}% of current epoch'.format(
+                    100 * iteration / coverLoader.number_of_batches))
+                print('% Diff on discriminator {:6.2f}% '.format(
+                    num_diff * 100))
+                print('Disc loss {:6.9f}'.format(loss_disc))
+                print('Gen loss {:6.9f}'.format(loss_gen))
+                print('Average time for 1000 iterations {:10.3f}min'.format(
+                    1000 * (time.time() - start) / 60 / log_scalars_every))
+                start = time.time()
 
             if (iteration % save_every == 0 and iteration != 0):
                 saver.save(sess, './saves/gan/gan-{}'.format(iteration))

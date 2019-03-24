@@ -124,7 +124,7 @@ class YedroudjModel:
     @define_scope(scope="disc_loss")  # pylint: disable=no-value-for-parameter
     def loss(self):
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
-            self.labels, self.disc_prediction, name="softmax"))
+            labels=self.labels, logits=self.disc_prediction, name="softmax"))
         tf.summary.scalar('disc_loss', loss)
         return loss
 

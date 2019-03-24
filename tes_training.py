@@ -11,9 +11,10 @@ batch_size = 1000
 iteration_number = 1000000
 log_every = 1000
 
+
 def train_tes():
-    prob_map = tf.placeholder(tf.float32, [None,  2])
-    label = tf.placeholder(tf.float32, [None])
+    prob_map = tf.placeholder(tf.float32, [None,  2], name="prob_maps")
+    label = tf.placeholder(tf.float32, [None], name="staircase_results")
     model = TESModel(prob_map, label)
 
     tes_vars = tf.get_collection(
@@ -24,7 +25,7 @@ def train_tes():
         sess.run(tf.global_variables_initializer())
 
         merged_summary = tf.summary.merge_all()
-        summaries_dir = "/tmp/TES/v4/"
+        summaries_dir = "./.tensorboards-logs/TES/v4/"
         train_writer = tf.summary.FileWriter(
             summaries_dir + "train")
         validation_writer = tf.summary.FileWriter(
@@ -42,10 +43,10 @@ def train_tes():
             prob_maps = np.random.rand(batch_size, 2)
             labels = np.apply_along_axis(staircase, 1, prob_maps)
             (_, training_loss) = sess.run(model.optimize, {prob_map: prob_maps,
-                                                  label: labels})
+                                                           label: labels})
             if (i % log_every == 0):
                 s = sess.run(merged_summary, {prob_map: prob_maps,
-                                                  label: labels})
+                                              label: labels})
                 train_writer.add_summary(s, i)
 
                 (loss, num_diff) = sess.run(
@@ -55,7 +56,7 @@ def train_tes():
                 print('Training loss {:6.9f} '.format(training_loss))
 
                 s = sess.run(merged_summary, {prob_map: prob_maps_test,
-                                                  label: labels_test})
+                                              label: labels_test})
                 validation_writer.add_summary(s, i)
         print("Optimization Finished!")
         tes_saver.save(sess, './saves/tes/tes')
@@ -66,8 +67,10 @@ testing_batch_size = 10
 
 
 def restore_tes():
-    prob_map = tf.placeholder(tf.float32, [None, Height, Width, 2])
-    label = tf.placeholder(tf.float32, [None, Height, Width])
+    prob_map = tf.placeholder(
+        tf.float32, [None, Height, Width, 2], name="prob_maps")
+    label = tf.placeholder(
+        tf.float32, [None, Height, Width], name="staircase_results")
     model = TESModel(prob_map, label)
 
     with tf.Session() as sess:
@@ -90,8 +93,8 @@ def restore_tes():
 
 
 def main():
-    # train_tes()
-    restore_tes()
+    train_tes()
+    # restore_tes()
 
 
 if __name__ == '__main__':

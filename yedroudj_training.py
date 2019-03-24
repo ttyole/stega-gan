@@ -13,11 +13,12 @@ Height, Width = 512, 512
 cover_path = os.getenv("COVER_PATH", dir + "/cover/")
 stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
 
-batch_size = 2
+batch_size = 1
 initial_learning_rate = 0.01
 gamma = 0.1
 max_epochs = 900
 log_every = 2
+
 
 def train_yedrouj():
     images = tf.placeholder(
@@ -66,7 +67,7 @@ def train_yedrouj():
                     s = sess.run(merged_summary, {
                         images: images_validation, labels: labels_validation})
                     validation_writer.add_summary(s, epoch)
-                    
+
                     # Compute error on training
                     (loss, num_diff) = sess.run(
                         model.error, {images: images_training, labels: labels_training})
