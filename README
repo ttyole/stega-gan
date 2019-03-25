@@ -16,3 +16,6 @@ docker run --rm -it -p 80:80/tcp ttyole/stega-gan:latest
 # Monitor ressource usage
  watch nvidia-smi
  htop
+
+# Embeder
+python embedder.py saves/gan test/cover.pgm "My awesome message" test/stego.pgm

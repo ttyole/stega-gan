@@ -8,7 +8,7 @@ def str2bits(s):
     return list(map(lambda c: int(c),list(''.join('{:08b}'.format(b) for b in s.encode('utf8')))))
 
 def bits2str(b):
-    return str(bytes(int(''.join(map(lambda x: str(x),b))[x:x+8],2) for x in range(0,len(b),8)).decode("utf8"))
+    return list(bytes(int(''.join(map(lambda x: str(x),b))[x:x+8],2) for x in range(0,len(b),8)).decode("utf8"))
     
 
 
@@ -26,14 +26,15 @@ c_mess = list(np.random.randint(0,2,100))
 print(message)
 print(c_mess)
 
-(success,stego,lsb) = stc.embed(c_cover,c_prob,c_mess)
-print(success, lsb)
+(success,c_stego,c_lsb) = stc.embed(c_cover,c_prob,c_mess)
+print(success,c_lsb)
 
-extracted_msg = stc.extract(stego,lsb)
-print(extracted_msg)
-print(bits2str(extracted_msg))
+c_extracted_msg = stc.extract(c_stego,c_lsb)
+print(c_extracted_msg)
+print(np.array(c_extracted_msg,dtype=int))
+print(bits2str(list(c_extracted_msg)))
 
-stego = np.reshape(np.array(stego),(n,n))
+stego = np.reshape(np.array(c_stego),(n,n))
 
 # plt.subplot(2,4,1)
 # plt.imshow(cover, cmap='gray')
