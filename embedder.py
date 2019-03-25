@@ -107,8 +107,15 @@ def main():
     if len(c_message) > 0.4*len(c_cover):
         print(
             "Warning: Your message contains {} bits whereas your cover image contains {} pixels. "
-            "For a payload of more than 0.4*nbr_pixels, the embeding may fail or become easily "
-            "detectable even if it succeed. Please shorten your message.".format(len(c_message),len(c_cover)))
+            "For a payload of more than 0.4*nbr_pixels = {} bits, the embeding may fail or become easily "
+            "detectable even if it succeed. Please shorten your message."
+            "".format(len(c_message),len(c_cover),0.4*len(c_cover)))
+
+    if len(c_message) > len(c_cover):
+        print(
+            "Error: Your payload has more bits than the number of pixel of your cover. Embeding impossible."
+            " Aborting...")
+        return
 
     (success,c_stego,c_lsb) = STC.embed(c_cover,c_probmap,c_message)
     stego = np.reshape(c_stego,(Height,Width))

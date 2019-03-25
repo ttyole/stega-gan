@@ -17,5 +17,6 @@ docker run --rm -it -p 80:80/tcp ttyole/stega-gan:latest
  watch nvidia-smi
  htop
 
-# Embeder
-python embedder.py saves/gan test/cover.pgm "My awesome message" test/stego.pgm
+# Embeder/Extractor
+python embedder.py saves/gan test/cover.pgm "My awesome message with unicode chr éà@ù" test/stego.pgm test/key
+python extractor.py test/stego.pgm test/key test/extractedMSG
