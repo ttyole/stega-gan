@@ -17,6 +17,7 @@ batch_size = 1
 initial_learning_rate = 0.01
 gamma = 0.1
 max_epochs = 900
+save_every = 100
 log_every = 2
 
 
@@ -25,6 +26,8 @@ def train_yedrouj():
         tf.float32, [None, Height, Width, 1], name="images")
     labels = tf.placeholder(tf.float32, [None, 2], name="labels")
     model = YedroudjModel(images, labels, initial_learning_rate)
+
+    saver = tf.train.Saver()
 
     print("Launching training")
     with tf.Session() as sess:
@@ -91,6 +94,11 @@ def train_yedrouj():
             print('% Diff on validation {:6.2f}% '.format(
                 average_num_diff * 100))
             print('Loss on validation {:6.9f}'.format(average_loss))
+
+            if (epoch % save_every == 0 and epoch != 0):
+                saver.save(
+                    sess, './saves/yedroudj/gyedroudjan-{}'.format(epoch))
+                print("Saved")
 
         print("Optimization Finished!")
 
