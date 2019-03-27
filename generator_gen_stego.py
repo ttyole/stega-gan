@@ -34,8 +34,8 @@ Height, Width = 512, 512
 batch_size = 10
 
 #cover_path = os.getenv("COVER_PATH", dir + "/cover/")
-cover_path = "tf/app/cover/"
-stego_path = "tf/app/stego/"
+cover_path = "/tf/app/cover/"
+stego_path = "/tf/app/stego/"
 
 # create cover list
 cover_list = [f for f in os.listdir(cover_path) \
