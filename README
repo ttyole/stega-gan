@@ -49,7 +49,6 @@ sudo nvidia-docker pull ttyole/stega-gan:latest
 sudo nvidia-docker run --runtime=nvidia -it -v /media/data/cover:/tf/app/cover \
                     -v /media/data/stego/asdl-gan:/tf/app/stego \
                     -p 80:80/tcp ttyole/stega-gan:latest
-
 docker run --rm -it -p 80:80/tcp ttyole/stega-gan:latest
 
 #######################################################################

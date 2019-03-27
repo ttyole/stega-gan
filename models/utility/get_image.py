@@ -124,6 +124,19 @@ def read_pgm(filename, byteorder='>'):
                          ).reshape((int(height), int(width)))
 
 
+def write_pgm(filename, data):
+    height = data.shape[0]
+    width = data.shape[1]
+    with open(filename, 'wb') as f:
+        pgmHeader = 'P5' + ' ' + str(width) + ' ' + \
+            str(height) + ' ' + str(255) + '\n'
+        pgmHeader = bytearray(pgmHeader, 'utf-8')
+        f.write(pgmHeader)
+        for j in range(height):
+            bnd = list(data[j, :])
+            f.write(bytearray(bnd))
+
+
 class CoverLoader:
 
     def __init__(self,
@@ -132,14 +145,14 @@ class CoverLoader:
 
         self.batch_size = batch_size
         self.cover_files = [cover_path+f for f in listdir(cover_path) if
-                  isfile(cover_path+f)]       
+                            isfile(cover_path+f)]
         self.cover_files_left = self.cover_files
         self.cover_files_size = len(self.cover_files)
         self.number_of_batches = int(self.cover_files_size / batch_size)
 
         random.shuffle(self.cover_files_left)
 
-    def getNextCoverBatch(self):
+    def getNextCoverBatch(self, return_filenames = False):
         """Batch will contain batch_size cover images
             The function returns a list containing batch_size tensors of size
             (image_height, image_width, 1)"""
@@ -149,6 +162,8 @@ class CoverLoader:
         batch_files = self.cover_files_left[:self.batch_size]
         self.cover_files_left = self.cover_files_left[self.batch_size:]
 
-        batch = [np.expand_dims(read_pgm(cover), axis=2) for cover in batch_files]
-
+        batch = [np.expand_dims(read_pgm(cover), axis=2)
+                 for cover in batch_files]
+        if return_filenames:
+            return (batch, batch_files)
         return batch

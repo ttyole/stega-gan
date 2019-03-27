@@ -34,7 +34,7 @@ def train_yedrouj():
         sess.run(tf.global_variables_initializer())
 
         merged_summary = tf.summary.merge_all()
-        summaries_dir = "./.tensorboards-logs/yedroudj/v2/"
+        summaries_dir = "./.tensorboards-logs/yedroudj/v3/"
         train_writer = tf.summary.FileWriter(
             summaries_dir + "train")
         validation_writer = tf.summary.FileWriter(
