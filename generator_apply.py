@@ -11,7 +11,7 @@ dir = os.path.dirname(os.path.realpath(__file__))
 Height, Width = 512, 512
 
 cover_path = os.getenv("COVER_PATH", dir + "/cover/")
-stego_path = os.getenv("STEGO_PATH", dir + "/stego/")
+stego_path = os.getenv("STEGO_PATH", dir + "/stego-gan/")
 
 batch_size = 2
 
@@ -34,11 +34,14 @@ def apply_generator():
                 return_filenames=True)
             print(images_files)
             prob_maps = np.random.randn(
-                batch_size, Height, Width, 2)
+                batch_size, Height, Width, 1)
             stegos = sess.run(generator.tesModel.generate_image, {
                               images: images_batch, rand_maps: prob_maps})
             for i in range(len(images_files)):
-                write_pgm(images_files[i], stegos[i])
+                print(images_files[i].replace(
+                    cover_path, stego_path))
+                write_pgm(images_files[i].replace(
+                    cover_path, stego_path), stegos[i])
 
 
 def main():
