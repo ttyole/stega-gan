@@ -23,10 +23,10 @@ class GeneratorModel:
         self.is_training = is_training
         self.generator_prediction
         self.capacity
-        tes_prob_maps = tf.concat(
-            [rand_maps, self.generator_prediction], 3, name="prob_maps_for_TES")
+        # tes_prob_maps = tf.concat(
+        #     [rand_maps, self.generator_prediction], 3, name="prob_maps_for_TES")
 
-        self.tesModel = TESModel(tes_prob_maps, images=covers)
+        # self.tesModel = TESModel(tes_prob_maps, images=covers)
 
         if is_training:
             self.learning_rate = 1e-10
