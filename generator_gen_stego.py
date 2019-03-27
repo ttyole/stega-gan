@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 from models.GeneratorModel import GeneratorModel
 from models.TESModel import TESModel
@@ -30,11 +31,11 @@ savedirgan = dir + "/saves/gan/"
 savedirtes = dir + "/saves/tes/"
 
 Height, Width = 512, 512
-batch_size = 1
+batch_size = 10
 
 #cover_path = os.getenv("COVER_PATH", dir + "/cover/")
-cover_path = "/home/jano/Supelec/Projet/DataBase/BOSSbase_1.01/cover/"
-stego_path = "/home/jano/Supelec/Projet/DataBase/BOSSbase_1.01/stego/asdl-gan/0.4bpp/"
+cover_path = "tf/app/cover"
+stego_path = "tf/app/stego"
 
 # create cover list
 cover_list = [f for f in os.listdir(cover_path) \
@@ -73,8 +74,8 @@ with tf.Session() as sess:
 
         stego_batch = sess.run(tes.generate_image, {covers: cover_batch, rand_maps:rand_maps_batch})
         for i in range(stego_batch.shape[0]):
-            stego = np.squeeze(stego_batch[i,...])
-            write_pgm(stego_path+batch_list[i],np.around(stego).astype(int))
+            stego = np.around(np.squeeze(stego_batch[i,...])).astype(int)
+            write_pgm(stego_path+batch_list[i],stego)
             nbr_stego_gen += 1;
         
         batch_time = time.time() - start        
