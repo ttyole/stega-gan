@@ -41,8 +41,7 @@ sudo nvidia-docker run --runtime=nvidia -it -v /media/data/cover/cover:/tf/app/c
                     -v /media/data/stego/wow-0.4-bpp/0.4bpp:/tf/app/stego \
                     -p 80:80/tcp ttyole/stega-gan:latest
 
-python generator_training.py &
-tensorboard --port 80 --logdir ./.tensorboards-logs/gan/v3 &
+python yedroudj_training.py & tensorboard --port 80 --logdir ./.tensorboards-logs/yedroudj/v3 &
 
 #######################################################################
 # gen stego img with generator trained
